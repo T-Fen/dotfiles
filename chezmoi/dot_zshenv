@@ -1,0 +1,12 @@
+# shellcheck shell=bash
+# Zsh environment file - sourced for ALL zsh sessions (login, non-login, interactive)
+# This must be kept minimal - just the essentials needed before anything else loads
+
+# XDG Base Directories
+export XDG_CONFIG_HOME="$HOME/.config"
+export XDG_DATA_HOME="$HOME/.local/share"
+export XDG_STATE_HOME="$HOME/.local/state"
+export XDG_CACHE_HOME="$HOME/.cache"
+
+# Tell zsh where to find its config files
+export ZDOTDIR="$HOME/.config/zsh"

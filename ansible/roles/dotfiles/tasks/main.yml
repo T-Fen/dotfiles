@@ -1,0 +1,79 @@
+---
+# =============================================================================
+# Role: dotfiles
+# Handles cloning and installing nickjj dotfiles
+# =============================================================================
+
+- name: Check if dotfiles repo already exists
+  stat:
+    path: "{{ ansible_env.HOME }}/dotfiles"
+  register: dotfiles_dir
+
+- name: Clone dotfiles repo
+  git:
+    repo: "git@github.com:{{ github_username }}/dotfiles.git"
+    dest: "{{ ansible_env.HOME }}/dotfiles"
+    version: master
+  when: not dotfiles_dir.stat.exists
+
+- name: Check if install-config exists
+  stat:
+    path: "{{ ansible_env.HOME }}/dotfiles/install-config"
+  register: install_config
+
+- name: Copy install-config from example
+  copy:
+    src: "{{ ansible_env.HOME }}/dotfiles/install-config.example"
+    dest: "{{ ansible_env.HOME }}/dotfiles/install-config"
+    remote_src: true
+  when: not install_config.stat.exists
+
+- name: Set DOTFILES_PATH in install-config
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/install-config"
+    line: 'export DOTFILES_PATH="${HOME}/dotfiles"'
+    state: present
+
+- name: Set GUI_LINUX=1 in install-config
+  replace:
+    path: "{{ ansible_env.HOME }}/dotfiles/install-config"
+    regexp: '^export GUI_LINUX=$'
+    replace: 'export GUI_LINUX=1'
+
+- name: Comment out empty PACKAGES arrays in install-config
+  replace:
+    path: "{{ ansible_env.HOME }}/dotfiles/install-config"
+    regexp: '^(export (?:PACKAGES_|MISE_|CONFIG_INSTALL|SYSTEMD_ENABLED_SERVICES|SUDOERS_ENTRIES))'
+    replace: '#\1'
+
+- name: Comment out empty declare -A arrays in install-config
+  replace:
+    path: "{{ ansible_env.HOME }}/dotfiles/install-config"
+    regexp: '^(declare -A (?:MISE_|SUDOERS_))'
+    replace: '#\1'
+
+- name: Patch install script to recognize CachyOS kernel
+  replace:
+    path: "{{ ansible_env.HOME }}/dotfiles/install"
+    regexp: '(\*zen\*\)\n\s+kernel_package="linux-zen-headers"\n\s+;;)'
+    replace: '\1\n  *cachyos*)\n    kernel_package="linux-cachyos-headers"\n    ;;'
+
+- name: Run dotfiles install script
+  command: "{{ ansible_env.HOME }}/dotfiles/install --skip-system-packages"
+  args:
+    chdir: "{{ ansible_env.HOME }}/dotfiles"
+  environment:
+    DOTFILES_PATH: "{{ ansible_env.HOME }}/dotfiles"
+    XDG_CONFIG_HOME: "{{ ansible_env.HOME }}/.config"
+    XDG_DATA_HOME: "{{ ansible_env.HOME }}/.local/share"
+    XDG_STATE_HOME: "{{ ansible_env.HOME }}/.local/state"
+    PACKAGES_AUTO_CONFIRM: "1"
+    HOME: "{{ ansible_env.HOME }}"
+    USER: "{{ ansible_env.USER }}"
+  register: dotfiles_install
+  failed_when: false
+
+- name: Show dotfiles install output
+  debug:
+    msg: "{{ dotfiles_install.stdout_lines }}"
+  when: dotfiles_install.stdout_lines is defined

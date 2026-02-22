@@ -1,0 +1,106 @@
+---
+# =============================================================================
+# Role: packages
+# Handles installation of pacman, AUR, and Flatpak packages
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Pacman packages
+# -----------------------------------------------------------------------------
+- name: Install pacman packages
+  become: true
+  pacman:
+    name: "{{ pacman_packages }}"
+    state: present
+    update_cache: true
+  ignore_errors: true
+  register: pacman_result
+
+- name: Show any failed pacman packages
+  debug:
+    msg: "Failed pacman packages: {{ pacman_result.failures | default([]) }}"
+  when: pacman_result.failed is defined and pacman_result.failed
+
+# -----------------------------------------------------------------------------
+# Yay (AUR helper)
+# -----------------------------------------------------------------------------
+- name: Check if yay is installed
+  command: which yay
+  register: yay_check
+  failed_when: false
+  changed_when: false
+
+- name: Clone yay-bin from AUR
+  git:
+    repo: https://aur.archlinux.org/yay-bin.git
+    dest: /tmp/yay-install
+    force: true
+  when: yay_check.rc != 0
+
+- name: Build and install yay
+  command: makepkg -si --noconfirm
+  args:
+    chdir: /tmp/yay-install
+  when: yay_check.rc != 0
+
+- name: Clean up yay build directory
+  file:
+    path: /tmp/yay-install
+    state: absent
+  when: yay_check.rc != 0
+
+# -----------------------------------------------------------------------------
+# AUR packages — installed one at a time for proper error isolation
+# -----------------------------------------------------------------------------
+- name: Install AUR packages individually
+  command: yay -S --needed --noconfirm "{{ item }}"
+  loop: "{{ aur_packages }}"
+  register: aur_results
+  failed_when: false
+  changed_when: "'installing' in aur_results.stdout | default('')"
+
+- name: Report AUR install results
+  debug:
+    msg: "{{ item.item }}: {{ 'OK' if item.rc == 0 else 'FAILED - ' + item.stderr | default('unknown error') }}"
+  loop: "{{ aur_results.results }}"
+  when: aur_results.results is defined
+
+# -----------------------------------------------------------------------------
+# Flatpak packages
+# -----------------------------------------------------------------------------
+- name: Check if flatpak is installed
+  command: which flatpak
+  register: flatpak_check
+  failed_when: false
+  changed_when: false
+
+- name: Add Flathub remote
+  command: flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  when: flatpak_check.rc == 0
+  failed_when: false
+
+- name: Install Flatpak packages
+  command: flatpak install -y flathub "{{ item }}"
+  loop: "{{ flatpak_packages }}"
+  when: flatpak_check.rc == 0
+  register: flatpak_results
+  failed_when: false
+
+# -----------------------------------------------------------------------------
+# Docker group
+# -----------------------------------------------------------------------------
+- name: Add user to docker group
+  become: true
+  user:
+    name: "{{ ansible_env.USER }}"
+    groups: docker
+    append: true
+  when: "'docker' in pacman_packages"
+
+# -----------------------------------------------------------------------------
+# AppImage reminders
+# -----------------------------------------------------------------------------
+- name: Show AppImage reminders
+  debug:
+    msg: "Remember to manually download: {{ item.name }} from {{ item.url }} → {{ item.destination }}"
+  loop: "{{ appimage_reminders }}"

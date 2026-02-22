@@ -1,0 +1,5 @@
+# shellcheck shell=bash
+# Personal zprofile additions — managed by chezmoi
+# Edit via: chezmoi edit ~/.config/zsh/.zprofile.local
+
+export DOTFILES_PATH="${HOME}/dotfiles"

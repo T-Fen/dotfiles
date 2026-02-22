@@ -1,0 +1,155 @@
+---
+# =============================================================================
+# Role: user
+# Handles user-level configuration, shell setup, and personal customizations
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Shell
+# -----------------------------------------------------------------------------
+- name: Set zsh as default shell
+  become: true
+  user:
+    name: "{{ ansible_env.USER }}"
+    shell: /usr/bin/zsh
+
+# -----------------------------------------------------------------------------
+# XDG vars in .zshenv
+# -----------------------------------------------------------------------------
+- name: Ensure XDG_CONFIG_HOME is in .zshenv
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/.zshenv"
+    line: 'export XDG_CONFIG_HOME="$HOME/.config"'
+    state: present
+    create: true
+
+- name: Ensure XDG_DATA_HOME is in .zshenv
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/.zshenv"
+    line: 'export XDG_DATA_HOME="$HOME/.local/share"'
+    state: present
+
+- name: Ensure XDG_STATE_HOME is in .zshenv
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/.zshenv"
+    line: 'export XDG_STATE_HOME="$HOME/.local/state"'
+    state: present
+
+# -----------------------------------------------------------------------------
+# Personal aliases (.aliases.local)
+# -----------------------------------------------------------------------------
+- name: Ensure .aliases.local exists
+  file:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.aliases.local"
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+
+- name: Set ll alias to use eza
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.aliases.local"
+    line: 'alias ll="eza"'
+    state: present
+
+- name: Set syu alias
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.aliases.local"
+    line: 'alias syu="sudo pacman -Syu"'
+    state: present
+
+- name: Set EDITOR to nvim
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.aliases.local"
+    line: 'export EDITOR="nvim"'
+    state: present
+
+- name: Set VISUAL to nvim
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.aliases.local"
+    line: 'export VISUAL="nvim"'
+    state: present
+
+- name: Set vi alias to nvim
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.aliases.local"
+    line: 'alias vi="nvim"'
+    state: present
+
+- name: Set vim alias to nvim
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.aliases.local"
+    line: 'alias vim="nvim"'
+    state: present
+
+- name: Set yazi alias
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.aliases.local"
+    line: 'alias y="yazi"'
+    state: present
+
+# -----------------------------------------------------------------------------
+# .zshrc.local — zoxide and fastfetch
+# -----------------------------------------------------------------------------
+- name: Ensure .zshrc.local exists
+  file:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.zshrc.local"
+    state: touch
+    modification_time: preserve
+    access_time: preserve
+
+- name: Add unalias z to prevent zoxide conflict
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.zshrc.local"
+    line: 'unalias z 2>/dev/null'
+    state: present
+
+- name: Add zoxide init to .zshrc.local
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.zshrc.local"
+    line: 'eval "$(zoxide init zsh)"'
+    state: present
+
+- name: Add fastfetch to .zshrc.local
+  lineinfile:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.zshrc.local"
+    line: 'fastfetch'
+    state: present
+
+# -----------------------------------------------------------------------------
+# Fastfetch config
+# -----------------------------------------------------------------------------
+- name: Ensure fastfetch config directory exists
+  file:
+    path: "{{ ansible_env.HOME }}/.config/fastfetch"
+    state: directory
+    mode: '0755'
+
+- name: Copy fastfetch config
+  copy:
+    src: "{{ ansible_env.HOME }}/dotfiles/.config/fastfetch/config.jsonc"
+    dest: "{{ ansible_env.HOME }}/.config/fastfetch/config.jsonc"
+    remote_src: true
+    force: false
+
+# -----------------------------------------------------------------------------
+# offlineimap
+# -----------------------------------------------------------------------------
+- name: Check if offlineimap config exists in dotfiles
+  stat:
+    path: "{{ ansible_env.HOME }}/dotfiles/.config/offlineimap/offlineimaprc"
+  register: offlineimap_config
+
+- name: Create offlineimap symlink
+  file:
+    src: "{{ ansible_env.HOME }}/dotfiles/.config/offlineimap/offlineimaprc"
+    dest: "{{ ansible_env.HOME }}/.offlineimaprc"
+    state: link
+    force: false
+  when: offlineimap_config.stat.exists
+
+# -----------------------------------------------------------------------------
+# Font cache
+# -----------------------------------------------------------------------------
+- name: Rebuild font cache
+  command: fc-cache -fv
+  changed_when: false

@@ -1,0 +1,16 @@
+---
+# CachyOS System Setup Playbook
+# Run: ansible-playbook ~/dotfiles/ansible/playbook.yml
+- name: CachyOS Full System Setup
+  hosts: localhost
+  connection: local
+  become: false
+
+  vars_files:
+    - vars/packages.yml
+
+  roles:
+    - system
+    - packages
+    - dotfiles
+    - user

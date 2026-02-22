@@ -1,0 +1,59 @@
+---
+# =============================================================================
+# Role: system
+# Handles system preparation before package installation
+# =============================================================================
+
+- name: Update package databases
+  become: true
+  command: pacman -Sy
+  changed_when: false
+
+- name: Install base dependencies
+  become: true
+  pacman:
+    name:
+      - git
+      - base-devel
+      - sudo
+    state: present
+
+- name: Install CachyOS kernel headers
+  become: true
+  pacman:
+    name: linux-cachyos-headers
+    state: present
+  ignore_errors: true
+
+- name: Check if wildcard Include exists in pacman.conf
+  command: grep -c "Include = /etc/pacman.d/\*.conf" /etc/pacman.conf
+  register: wildcard_include
+  failed_when: false
+  changed_when: false
+
+- name: Remove wildcard Include from pacman.conf (causes duplicate database error)
+  become: true
+  lineinfile:
+    path: /etc/pacman.conf
+    line: "Include = /etc/pacman.d/*.conf"
+    state: absent
+  when: wildcard_include.stdout | int > 0
+
+- name: Ensure zsh is in /etc/shells
+  become: true
+  lineinfile:
+    path: /etc/shells
+    line: /usr/bin/zsh
+    state: present
+
+- name: Create Applications directory
+  file:
+    path: "{{ ansible_env.HOME }}/Applications"
+    state: directory
+    mode: '0755'
+
+- name: Create .local/bin directory
+  file:
+    path: "{{ ansible_env.HOME }}/.local/bin"
+    state: directory
+    mode: '0755'

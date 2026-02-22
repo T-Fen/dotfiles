@@ -1,0 +1,12 @@
+# shellcheck shell=bash
+# Personal zshrc additions — managed by chezmoi
+# Edit via: chezmoi edit ~/.config/zsh/.zshrc.local
+
+# Prevent any stale zoxide alias from conflicting
+unalias z 2>/dev/null
+
+# Initialize zoxide (smart cd replacement)
+eval "$(zoxide init zsh)"
+
+# Show system info on terminal startup
+fastfetch
