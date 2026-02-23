@@ -43,6 +43,17 @@ header "CachyOS Bootstrap — Full System Setup"
 echo "  Log: ${LOG_FILE}"
 echo "  Started: $(date)"
 
+# ── Passwordless sudo ─────────────────────────────────────────────────────────
+# Required for Ansible — prompts for password once, then never again this run
+SUDOERS_FILE="/etc/sudoers.d/${USER}-nopasswd"
+if [[ ! -f "${SUDOERS_FILE}" ]]; then
+  echo "${USER} ALL=(ALL) NOPASSWD: ALL" | sudo tee "${SUDOERS_FILE}" >/dev/null
+  sudo chmod 440 "${SUDOERS_FILE}"
+  success "Passwordless sudo configured (you won't be prompted again)"
+else
+  success "Passwordless sudo already configured"
+fi
+
 # ── Step 1: System update ─────────────────────────────────────────────────────
 info "Step 1/12: System update"
 sudo pacman -Syu --noconfirm
