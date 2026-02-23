@@ -16,7 +16,6 @@ set -euo pipefail
 # ── Config — edit these ───────────────────────────────────────────────────────
 GITHUB_USERNAME="T-Fen"
 GITHUB_EMAIL="hjsizemore@gmail.com"
-GITHUB_NAME="Trey"
 DOTFILES_REPO="git@github.com:${GITHUB_USERNAME}/dotfiles.git"
 DOTFILES_PATH="${HOME}/dotfiles"
 
@@ -27,11 +26,11 @@ C_YELLOW="\e[0;33;1m"
 C_RED="\e[0;31;1m"
 C_RESET="\e[0m"
 
-info()    { printf "\n%b▶ %s%b\n" "${C_CYAN}"   "${1}" "${C_RESET}"; }
-success() { printf "%b  ✓ %s%b\n" "${C_GREEN}"  "${1}" "${C_RESET}"; }
-warn()    { printf "%b  ⚠ %s%b\n" "${C_YELLOW}" "${1}" "${C_RESET}"; }
-error()   { printf "%b  ✗ %s%b\n" "${C_RED}"    "${1}" "${C_RESET}"; }
-header()  {
+info() { printf "\n%b▶ %s%b\n" "${C_CYAN}" "${1}" "${C_RESET}"; }
+success() { printf "%b  ✓ %s%b\n" "${C_GREEN}" "${1}" "${C_RESET}"; }
+warn() { printf "%b  ⚠ %s%b\n" "${C_YELLOW}" "${1}" "${C_RESET}"; }
+error() { printf "%b  ✗ %s%b\n" "${C_RED}" "${1}" "${C_RESET}"; }
+header() {
   printf "\n%b╔══════════════════════════════════════════════════════╗%b\n" "${C_CYAN}" "${C_RESET}"
   printf "%b║  %-52s║%b\n" "${C_CYAN}" "${1}" "${C_RESET}"
   printf "%b╚══════════════════════════════════════════════════════╝%b\n" "${C_CYAN}" "${C_RESET}"
@@ -65,9 +64,11 @@ fi
 
 # ── Step 4: Kernel headers ────────────────────────────────────────────────────
 info "Step 4/12: Installing CachyOS kernel headers"
-sudo pacman -S --needed --noconfirm linux-cachyos-headers && \
-  success "Kernel headers installed" || \
+if sudo pacman -S --needed --noconfirm linux-cachyos-headers; then
+  success "Kernel headers installed"
+else
   warn "Could not install linux-cachyos-headers — continuing"
+fi
 
 # ── Step 5: SSH key ───────────────────────────────────────────────────────────
 info "Step 5/12: Setting up SSH key"
@@ -89,7 +90,7 @@ else
 fi
 
 # Add GitHub to known hosts to avoid interactive prompt
-ssh-keyscan github.com >> "${HOME}/.ssh/known_hosts" 2>/dev/null
+ssh-keyscan github.com >>"${HOME}/.ssh/known_hosts" 2>/dev/null
 chmod 600 "${HOME}/.ssh/known_hosts"
 
 # Test connection
@@ -110,6 +111,12 @@ else
   success "Dotfiles cloned"
 fi
 
+# ── Mise trust ───────────────────────────────────────────────────────────────
+if command -v mise &>/dev/null && [[ -f "${HOME}/.config/mise/config.toml" ]]; then
+  mise trust "${HOME}/.config/mise/config.toml"
+  success "mise config trusted"
+fi
+
 # ── Step 7: Configure install-config ─────────────────────────────────────────
 info "Step 7/12: Configuring install-config"
 if [[ ! -f "${DOTFILES_PATH}/install-config" ]]; then
@@ -125,9 +132,10 @@ sed -i 's/^declare -A \(MISE_\|SUDOERS_\)/#declare -A \1/' \
 # Set GUI_LINUX=1
 sed -i 's/^export GUI_LINUX=$/export GUI_LINUX=1/' "${DOTFILES_PATH}/install-config"
 
-# Set DOTFILES_PATH
-grep -q "^export DOTFILES_PATH=" "${DOTFILES_PATH}/install-config" || \
-  echo 'export DOTFILES_PATH="${HOME}/dotfiles"' >> "${DOTFILES_PATH}/install-config"
+# Set DOTFILES_PATH — single quotes are intentional: writing literal $HOME to file
+# shellcheck disable=SC2016
+grep -q "^export DOTFILES_PATH=" "${DOTFILES_PATH}/install-config" ||
+  echo 'export DOTFILES_PATH="${HOME}/dotfiles"' >>"${DOTFILES_PATH}/install-config"
 
 success "install-config configured"
 
@@ -201,19 +209,20 @@ else
   success "zsh already default shell"
 fi
 
-# XDG vars in .zshenv
+# XDG vars in .zshenv — single quotes are intentional: writing literal $HOME to file
+# shellcheck disable=SC2016
 for line in \
   'export XDG_CONFIG_HOME="$HOME/.config"' \
   'export XDG_DATA_HOME="$HOME/.local/share"' \
   'export XDG_STATE_HOME="$HOME/.local/state"'; do
-  grep -qF "${line}" "${HOME}/.zshenv" 2>/dev/null || \
-    echo "${line}" >> "${HOME}/.zshenv"
+  grep -qF "${line}" "${HOME}/.zshenv" 2>/dev/null ||
+    echo "${line}" >>"${HOME}/.zshenv"
 done
 success "XDG vars set in .zshenv"
 
 # offlineimap symlink
-if [[ -f "${DOTFILES_PATH}/.config/offlineimap/offlineimaprc" ]] && \
-   [[ ! -f "${HOME}/.offlineimaprc" ]]; then
+if [[ -f "${DOTFILES_PATH}/.config/offlineimap/offlineimaprc" ]] &&
+  [[ ! -f "${HOME}/.offlineimaprc" ]]; then
   ln -s "${DOTFILES_PATH}/.config/offlineimap/offlineimaprc" "${HOME}/.offlineimaprc"
   success "offlineimap symlink created"
 fi
