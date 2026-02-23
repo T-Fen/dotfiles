@@ -154,7 +154,7 @@ fi
 # ── Step 9: Run Ansible playbook ─────────────────────────────────────────────
 info "Step 9/12: Running Ansible playbook (this will take 20-40 minutes)"
 if [[ -f "${DOTFILES_PATH}/ansible/playbook.yml" ]]; then
-  ansible-playbook \
+  ANSIBLE_CONFIG="${DOTFILES_PATH}/ansible/ansible.cfg" ansible-playbook \
     -i "${DOTFILES_PATH}/ansible/inventory.ini" \
     "${DOTFILES_PATH}/ansible/playbook.yml" \
     --extra-vars "github_username=${GITHUB_USERNAME}"
