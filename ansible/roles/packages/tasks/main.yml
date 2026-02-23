@@ -52,7 +52,7 @@
 # AUR packages — installed one at a time for proper error isolation
 # -----------------------------------------------------------------------------
 - name: Install AUR packages individually
-  command: yay -S --needed --noconfirm "{{ item }}"
+  command: bash -c "yay -S --needed --noconfirm '{{ item }}' 2>&1 | tee /dev/tty"
   loop: "{{ aur_packages }}"
   loop_control:
     label: "{{ item }}"
