@@ -3,7 +3,6 @@
 # Role: packages
 # Handles installation of pacman, AUR, and Flatpak packages
 # =============================================================================
-
 # -----------------------------------------------------------------------------
 # Pacman packages
 # -----------------------------------------------------------------------------
@@ -55,15 +54,21 @@
 - name: Install AUR packages individually
   command: yay -S --needed --noconfirm "{{ item }}"
   loop: "{{ aur_packages }}"
+  loop_control:
+    label: "{{ item }}"
   register: aur_results
   failed_when: false
   changed_when: "'installing' in aur_results.stdout | default('')"
 
 - name: Report AUR install results
   debug:
-    msg: "{{ item.item }}: {{ 'OK' if item.rc == 0 else 'FAILED - ' + item.stderr | default('unknown error') }}"
+    msg: >
+      {{ item.item }}: {{ 'OK' if item.rc == 0 else 'FAILED' }}
+      {{ item.stdout_lines[-3:] | default([]) | join(' | ') }}
   loop: "{{ aur_results.results }}"
   when: aur_results.results is defined
+  loop_control:
+    label: "{{ item.item }}"
 
 # -----------------------------------------------------------------------------
 # Flatpak packages
@@ -85,6 +90,8 @@
   when: flatpak_check.rc == 0
   register: flatpak_results
   failed_when: false
+  loop_control:
+    label: "{{ item }}"
 
 # -----------------------------------------------------------------------------
 # Docker group
@@ -104,3 +111,5 @@
   debug:
     msg: "Remember to manually download: {{ item.name }} from {{ item.url }} → {{ item.destination }}"
   loop: "{{ appimage_reminders }}"
+  loop_control:
+    label: "{{ item.name }}"
