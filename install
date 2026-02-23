@@ -976,6 +976,9 @@ detect_and_prepare_gpu() {
   *zen*)
     kernel_package="linux-zen-headers"
     ;;
+  *cachyos*)
+    kernel_package="linux-cachyos-headers"
+    ;;
   *hardened*)
     kernel_package="linux-hardened-headers"
     ;;
