@@ -10,3 +10,6 @@ export XDG_CACHE_HOME="$HOME/.cache"
 
 # Tell zsh where to find its config files
 export ZDOTDIR="$HOME/.config/zsh"
+
+# Doom Emacs
+export PATH="$HOME/.emacs.d/bin:$PATH"
