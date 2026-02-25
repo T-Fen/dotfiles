@@ -1,4 +1,4 @@
-# shellcheck shell=bash
+# shellcheck shell=zsh
 # Personal zshrc additions — managed by chezmoi
 # Edit via: chezmoi edit ~/.config/zsh/.zshrc.local
 
