@@ -18,7 +18,6 @@ pacman_packages:
   - bat
   - fastfetch
   - btop
-  - zsh-theme-powerlevel10k-git
 
   # Editors
   - neovim
@@ -162,6 +161,7 @@ aur_packages:
   - zoom
   - zen-browser-bin
   - wallust
+  - zsh-theme-powerlevel10k-git
 
   # Tools
   - yazi
