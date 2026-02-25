@@ -5,20 +5,10 @@
 # Suppress stty error in non-interactive shells
 [[ -o interactive ]] && stty stop undef 2>/dev/null
 
-# Powerlevel10k instant prompt — set to quiet to allow fastfetch output
-# shellcheck disable=SC2034
-typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
-
 # Prevent any stale zoxide alias from conflicting
 unalias z 2>/dev/null
 
 # Initialize zoxide
 eval "$(zoxide init zsh)"
 
-# Run fastfetch once after first prompt (ensures kitty graphics protocol is ready)
-_fastfetch_once() {
-  fastfetch
-  # shellcheck disable=SC2296
-  precmd_functions=("${(@)precmd_functions:#_fastfetch_once}")
-}
-precmd_functions+=(_fastfetch_once)
+fastfetch
