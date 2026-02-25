@@ -13,4 +13,9 @@ eval "$(zoxide init zsh)"
 
 # Show system info on terminal startup
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
-fastfetch
+# Run fastfetch once after first prompt (ensures kitty graphics protocol is ready)
+_fastfetch_once() {
+  fastfetch
+  precmd_functions=("${(@)precmd_functions:#_fastfetch_once}")
+}
+precmd_functions+=(_fastfetch_once)
