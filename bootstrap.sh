@@ -19,7 +19,6 @@ set -euo pipefail
 # ── Config — edit these ───────────────────────────────────────────────────────
 GITHUB_USERNAME="T-Fen"
 GITHUB_EMAIL="hjsizemore@gmail.com"
-GITHUB_NAME="Trey"
 DOTFILES_REPO="git@github.com:${GITHUB_USERNAME}/dotfiles.git"
 DOTFILES_PATH="${HOME}/dotfiles"
 
@@ -68,9 +67,11 @@ fi
 
 # ── Step 4: Kernel headers ────────────────────────────────────────────────────
 info "Step 4/12: Installing CachyOS kernel headers"
-sudo pacman -S --needed --noconfirm linux-cachyos-headers && \
-  success "Kernel headers installed" || \
+if sudo pacman -S --needed --noconfirm linux-cachyos-headers; then
+  success "Kernel headers installed"
+else
   warn "Could not install linux-cachyos-headers — continuing"
+fi
 
 # ── Step 5: SSH key ───────────────────────────────────────────────────────────
 info "Step 5/12: Setting up SSH key"
@@ -128,7 +129,8 @@ sed -i 's/^declare -A \(MISE_\|SUDOERS_\)/#declare -A \1/' \
 # Set GUI_LINUX=1
 sed -i 's/^export GUI_LINUX=$/export GUI_LINUX=1/' "${DOTFILES_PATH}/install-config"
 
-# Set DOTFILES_PATH
+# Set DOTFILES_PATH (single quotes intentional — we want literal $HOME in the file)
+# shellcheck disable=SC2016
 grep -q "^export DOTFILES_PATH=" "${DOTFILES_PATH}/install-config" || \
   echo 'export DOTFILES_PATH="${HOME}/dotfiles"' >> "${DOTFILES_PATH}/install-config"
 
@@ -207,6 +209,8 @@ else
 fi
 
 # XDG vars and PATH in .zshenv
+# Single quotes intentional — we want literal $HOME written to the file
+# shellcheck disable=SC2016
 for line in \
   'export PATH="$HOME/.local/bin:$PATH"' \
   'export XDG_CONFIG_HOME="$HOME/.config"' \
