@@ -12,4 +12,5 @@ unalias z 2>/dev/null
 eval "$(zoxide init zsh)"
 
 # Show system info on terminal startup
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 fastfetch
