@@ -26,9 +26,10 @@
     path: /usr/share/oh-my-zsh
   register: omz_system_check
 
-- name: Install Oh My Zsh (only if not installed anywhere)
-  shell: >
-    ZSH="{{ ansible_facts['env']['HOME'] }}/.oh-my-zsh"
+- name: Install Oh My Zsh (without modifying .zshrc)
+  shell: |
+    KEEP_ZSHRC=yes \
+    ZSH="{{ ansible_facts['env']['HOME'] }}/.oh-my-zsh" \
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
   when: not omz_home_check.stat.exists and not omz_system_check.stat.exists
 
