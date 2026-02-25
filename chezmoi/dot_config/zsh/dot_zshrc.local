@@ -2,6 +2,9 @@
 # Personal zshrc additions — managed by chezmoi
 # Edit via: chezmoi edit ~/.config/zsh/.zshrc.local
 
+# Suppress stty error in non-interactive shells
+[[ -o interactive ]] && stty stop undef 2>/dev/null
+
 # Powerlevel10k
 [[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
 
