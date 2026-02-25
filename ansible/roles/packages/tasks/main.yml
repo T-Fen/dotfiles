@@ -52,13 +52,13 @@
 # AUR packages — installed one at a time for proper error isolation
 # -----------------------------------------------------------------------------
 - name: Install AUR packages individually
-  command: bash -c "yay -S --needed --noconfirm '{{ item }}' 2>&1 | tee /dev/tty"
+  command: yay -S --needed --noconfirm --mflags "--nocheck" "{{ item }}"
   loop: "{{ aur_packages }}"
   loop_control:
     label: "{{ item }}"
   register: aur_results
   failed_when: false
-  changed_when: "'installing' in aur_results.stdout | default('')"
+  changed_when: false
 
 - name: Report AUR install results
   debug:
@@ -96,13 +96,19 @@
 # -----------------------------------------------------------------------------
 # Docker group
 # -----------------------------------------------------------------------------
+- name: Check if docker is installed
+  command: which docker
+  register: docker_check
+  failed_when: false
+  changed_when: false
+
 - name: Add user to docker group
   become: true
   user:
-    name: "{{ ansible_env.USER }}"
+    name: "{{ ansible_facts['user_id'] }}"
     groups: docker
     append: true
-  when: "'docker' in pacman_packages"
+  when: docker_check.rc == 0
 
 # -----------------------------------------------------------------------------
 # AppImage reminders
