@@ -48,12 +48,12 @@
 
 - name: Create Applications directory
   file:
-    path: "{{ ansible_env.HOME }}/Applications"
+    path: "{{ ansible_facts['env']['HOME'] }}/Applications"
     state: directory
     mode: '0755'
 
 - name: Create .local/bin directory
   file:
-    path: "{{ ansible_env.HOME }}/.local/bin"
+    path: "{{ ansible_facts['env']['HOME'] }}/.local/bin"
     state: directory
     mode: '0755'
