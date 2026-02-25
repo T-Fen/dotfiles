@@ -2,6 +2,14 @@
 # Personal zshrc additions — managed by chezmoi
 # Edit via: chezmoi edit ~/.config/zsh/.zshrc.local
 
+# Oh My Zsh
+export ZSH="$HOME/.oh-my-zsh"
+ZSH_THEME="powerlevel10k/powerlevel10k"
+source $ZSH/oh-my-zsh.sh
+
+# Powerlevel10k
+[[ -f ~/.p10k.zsh ]] && source ~/.p10k.zsh
+
 # Prevent any stale zoxide alias from conflicting
 unalias z 2>/dev/null
 

@@ -13,6 +13,25 @@
     name: "{{ ansible_env.USER }}"
     shell: /usr/bin/zsh
 
+# Oh My Zsh
+- name: Check if Oh My Zsh is installed
+  stat:
+    path: "{{ ansible_env.HOME }}/.oh-my-zsh"
+  register: omz_check
+
+- name: Install Oh My Zsh
+  shell: |
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+  when: not omz_check.stat.exists
+
+- name: Install Powerlevel10k theme
+  git:
+    repo: https://github.com/romkatv/powerlevel10k.git
+    dest: "{{ ansible_env.HOME }}/.oh-my-zsh/custom/themes/powerlevel10k"
+    depth: 1
+    force: false
+  when: not omz_check.stat.exists
+
 # -----------------------------------------------------------------------------
 # XDG vars in .zshenv
 # -----------------------------------------------------------------------------
@@ -100,7 +119,7 @@
 - name: Add unalias z to prevent zoxide conflict
   lineinfile:
     path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.zshrc.local"
-    line: 'unalias z 2>/dev/null'
+    line: "unalias z 2>/dev/null"
     state: present
 
 - name: Add zoxide init to .zshrc.local
@@ -112,7 +131,7 @@
 - name: Add fastfetch to .zshrc.local
   lineinfile:
     path: "{{ ansible_env.HOME }}/dotfiles/.config/zsh/.zshrc.local"
-    line: 'fastfetch'
+    line: "fastfetch"
     state: present
 
 # -----------------------------------------------------------------------------
@@ -122,7 +141,7 @@
   file:
     path: "{{ ansible_env.HOME }}/.config/fastfetch"
     state: directory
-    mode: '0755'
+    mode: "0755"
 
 - name: Copy fastfetch config
   copy:
