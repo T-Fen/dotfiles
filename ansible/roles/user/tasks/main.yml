@@ -62,7 +62,7 @@
   when: not doom_check.stat.exists
 
 - name: Install Doom Emacs
-  command: "{{ ansible_facts['env']['HOME'] }}/.config/emacs/bin/doom install --no-config --no-fonts --no-env"
+  command: "{{ ansible_facts['env']['HOME'] }}/.config/emacs/bin/doom install --no-config --no-env"
   when: not doom_check.stat.exists
   environment:
     HOME: "{{ ansible_facts['env']['HOME'] }}"
