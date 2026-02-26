@@ -46,6 +46,28 @@
     force: false
   when: not p10k_check.stat.exists
 
+  # -----------------------------------------------------------------------------
+# Doom Emacs
+# -----------------------------------------------------------------------------
+- name: Check if Doom Emacs is installed
+  stat:
+    path: "{{ ansible_facts['env']['HOME'] }}/.config/emacs/bin/doom"
+  register: doom_check
+
+- name: Clone Doom Emacs
+  git:
+    repo: https://github.com/doomemacs/doomemacs.git
+    dest: "{{ ansible_facts['env']['HOME'] }}/.config/emacs"
+    depth: 1
+  when: not doom_check.stat.exists
+
+- name: Install Doom Emacs
+  command: "{{ ansible_facts['env']['HOME'] }}/.config/emacs/bin/doom install --no-config --no-fonts --no-env"
+  when: not doom_check.stat.exists
+  environment:
+    HOME: "{{ ansible_facts['env']['HOME'] }}"
+    PATH: "{{ ansible_facts['env']['HOME'] }}/.config/emacs/bin:{{ ansible_facts['env']['PATH'] }}"
+
 # -----------------------------------------------------------------------------
 # XDG vars and PATH in .zshenv
 # -----------------------------------------------------------------------------
