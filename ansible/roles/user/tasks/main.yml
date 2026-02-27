@@ -189,7 +189,7 @@
     src: "{{ ansible_facts['env']['HOME'] }}/dotfiles/.config/fastfetch/config.jsonc"
     dest: "{{ ansible_facts['env']['HOME'] }}/.config/fastfetch/config.jsonc"
     remote_src: true
-    force: false
+    force: true
 
 # -----------------------------------------------------------------------------
 # offlineimap
