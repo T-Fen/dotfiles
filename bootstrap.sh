@@ -29,11 +29,11 @@ C_YELLOW="\e[0;33;1m"
 C_RED="\e[0;31;1m"
 C_RESET="\e[0m"
 
-info()    { printf "\n%b▶ %s%b\n" "${C_CYAN}"   "${1}" "${C_RESET}"; }
-success() { printf "%b  ✓ %s%b\n" "${C_GREEN}"  "${1}" "${C_RESET}"; }
-warn()    { printf "%b  ⚠ %s%b\n" "${C_YELLOW}" "${1}" "${C_RESET}"; }
-error()   { printf "%b  ✗ %s%b\n" "${C_RED}"    "${1}" "${C_RESET}"; }
-header()  {
+info() { printf "\n%b▶ %s%b\n" "${C_CYAN}" "${1}" "${C_RESET}"; }
+success() { printf "%b  ✓ %s%b\n" "${C_GREEN}" "${1}" "${C_RESET}"; }
+warn() { printf "%b  ⚠ %s%b\n" "${C_YELLOW}" "${1}" "${C_RESET}"; }
+error() { printf "%b  ✗ %s%b\n" "${C_RED}" "${1}" "${C_RESET}"; }
+header() {
   printf "\n%b╔══════════════════════════════════════════════════════╗%b\n" "${C_CYAN}" "${C_RESET}"
   printf "%b║  %-52s║%b\n" "${C_CYAN}" "${1}" "${C_RESET}"
   printf "%b╚══════════════════════════════════════════════════════╝%b\n" "${C_CYAN}" "${C_RESET}"
@@ -93,7 +93,7 @@ else
 fi
 
 # Add GitHub to known hosts to avoid interactive prompt
-ssh-keyscan github.com >> "${HOME}/.ssh/known_hosts" 2>/dev/null
+ssh-keyscan github.com >>"${HOME}/.ssh/known_hosts" 2>/dev/null
 chmod 600 "${HOME}/.ssh/known_hosts"
 
 # Test connection
@@ -131,8 +131,8 @@ sed -i 's/^export GUI_LINUX=$/export GUI_LINUX=1/' "${DOTFILES_PATH}/install-con
 
 # Set DOTFILES_PATH (single quotes intentional — we want literal $HOME in the file)
 # shellcheck disable=SC2016
-grep -q "^export DOTFILES_PATH=" "${DOTFILES_PATH}/install-config" || \
-  echo 'export DOTFILES_PATH="${HOME}/dotfiles"' >> "${DOTFILES_PATH}/install-config"
+grep -q "^export DOTFILES_PATH=" "${DOTFILES_PATH}/install-config" ||
+  echo 'export DOTFILES_PATH="${HOME}/dotfiles"' >>"${DOTFILES_PATH}/install-config"
 
 success "install-config configured"
 
@@ -162,7 +162,8 @@ if [[ -f "${DOTFILES_PATH}/ansible/playbook.yml" ]]; then
   ansible-playbook \
     -i "${DOTFILES_PATH}/ansible/inventory.ini" \
     "${DOTFILES_PATH}/ansible/playbook.yml" \
-    --extra-vars "github_username=${GITHUB_USERNAME}"
+    --extra-vars "github_username=${GITHUB_USERNAME}" ||
+    warn "Ansible had failures — continuing bootstrap. Re-run ansible manually after."
   success "Ansible playbook complete"
 else
   warn "Ansible playbook not found at ${DOTFILES_PATH}/ansible/playbook.yml"
@@ -216,14 +217,14 @@ for line in \
   'export XDG_CONFIG_HOME="$HOME/.config"' \
   'export XDG_DATA_HOME="$HOME/.local/share"' \
   'export XDG_STATE_HOME="$HOME/.local/state"'; do
-  grep -qF "${line}" "${HOME}/.zshenv" 2>/dev/null || \
-    echo "${line}" >> "${HOME}/.zshenv"
+  grep -qF "${line}" "${HOME}/.zshenv" 2>/dev/null ||
+    echo "${line}" >>"${HOME}/.zshenv"
 done
 success "XDG vars and PATH set in .zshenv"
 
 # offlineimap symlink
-if [[ -f "${DOTFILES_PATH}/.config/offlineimap/offlineimaprc" ]] && \
-   [[ ! -f "${HOME}/.offlineimaprc" ]]; then
+if [[ -f "${DOTFILES_PATH}/.config/offlineimap/offlineimaprc" ]] &&
+  [[ ! -f "${HOME}/.offlineimaprc" ]]; then
   ln -s "${DOTFILES_PATH}/.config/offlineimap/offlineimaprc" "${HOME}/.offlineimaprc"
   success "offlineimap symlink created"
 fi
