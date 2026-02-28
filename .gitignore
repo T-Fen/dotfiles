@@ -26,3 +26,4 @@ tags
 .local/bin/local/
 etc/pacman.d/02-ignore.conf.example
 install-config
+doom/private/
