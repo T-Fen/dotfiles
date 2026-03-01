@@ -144,6 +144,8 @@
 ;; Spell Check
 ;; ──────────────────────────────────────────
 
+(setq ispell-dictionary "en_US")
+
 (after! flyspell
   (add-hook 'org-mode-hook #'flyspell-mode)
   (add-hook 'text-mode-hook #'flyspell-mode)
@@ -198,21 +200,29 @@
 ;; ──────────────────────────────────────────
 
 (map! :leader
-      :desc "Fetch Google Calendar" "o g" #'org-gcal-fetch
-      :desc "Visual calendar"       "o v" #'cfw:open-org-calendar)
+      :desc "Fetch Google Calendar" "o g" #'org-gcal-fetch)
 
 
 ;; ──────────────────────────────────────────
 ;; Calfw — visual month/week calendar grid
+;; Force-loaded at startup so cfw: functions are always available
 ;; ──────────────────────────────────────────
 
-(after! calfw
-  (setq cfw:org-capture-template "t"))
+(require 'calfw)
+(require 'calfw-org)
 
-(after! calfw-org
-  (setq cfw:face-title              '(:foreground "#61afef" :weight bold)
-        cfw:face-header             '(:foreground "#98c379" :weight bold)
-        cfw:face-sunday             '(:foreground "#e06c75")
-        cfw:face-saturday           '(:foreground "#e5c07b")
-        cfw:face-today-title        '(:foreground "#61afef" :weight bold :underline t)
-        cfw:face-today              '(:foreground "#61afef")))
+(setq cfw:org-capture-template "t")
+(setq cfw:face-title              '(:foreground "#61afef" :weight bold)
+      cfw:face-header             '(:foreground "#98c379" :weight bold)
+      cfw:face-sunday             '(:foreground "#e06c75")
+      cfw:face-saturday           '(:foreground "#e5c07b")
+      cfw:face-today-title        '(:foreground "#61afef" :weight bold :underline t)
+      cfw:face-today              '(:foreground "#61afef"))
+
+(defun my/open-calendar ()
+  "Open calfw org calendar view."
+  (interactive)
+  (cfw:open-org-calendar))
+
+(map! :leader
+      :desc "Visual calendar" "o v" #'my/open-calendar)
