@@ -1,0 +1,52 @@
+# ─── Global ───────────────────────────────────────────────────────────────────
+Create Both
+Expunge Both
+SyncState *
+
+# ─── Gmail: hjsizemore@gmail.com ──────────────────────────────────────────────
+IMAPAccount gmail-hj
+Host imap.gmail.com
+User hjsizemore@gmail.com
+PassCmd "pass gmail/hjsizemore"
+SSLType IMAPS
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+IMAPStore gmail-hj-remote
+Account gmail-hj
+
+MaildirStore gmail-hj-local
+SubFolders Verbatim
+Path ~/.mail/gmail-hj/
+Inbox ~/.mail/gmail-hj/INBOX
+
+Channel gmail-hj
+Far :gmail-hj-remote:
+Near :gmail-hj-local:
+Patterns * ![Gmail]/All\ Mail ![Gmail]/Important ![Gmail]/Starred
+Create Both
+Expunge Both
+SyncState *
+
+# ─── Gmail: trey.sizemore@gmail.com ───────────────────────────────────────────
+IMAPAccount gmail-trey
+Host imap.gmail.com
+User trey.sizemore@gmail.com
+PassCmd "pass gmail/treysizemore"
+SSLType IMAPS
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+IMAPStore gmail-trey-remote
+Account gmail-trey
+
+MaildirStore gmail-trey-local
+SubFolders Verbatim
+Path ~/.mail/gmail-trey/
+Inbox ~/.mail/gmail-trey/INBOX
+
+Channel gmail-trey
+Far :gmail-trey-remote:
+Near :gmail-trey-local:
+Patterns * ![Gmail]/All\ Mail ![Gmail]/Important ![Gmail]/Starred
+Create Both
+Expunge Both
+SyncState *

@@ -1,0 +1,31 @@
+defaults
+auth           on
+tls            on
+tls_trust_file /etc/ssl/certs/ca-certificates.crt
+logfile        ~/.local/share/msmtp/msmtp.log
+
+# Fastmail
+account        fastmail
+host           smtp.fastmail.com
+port           587
+from           trey@fastmail.fm
+user           trey@fastmail.fm
+passwordeval   "pass fastmail/trey"
+
+# Gmail: hjsizemore
+account        gmail-hj
+host           smtp.gmail.com
+port           587
+from           hjsizemore@gmail.com
+user           hjsizemore@gmail.com
+passwordeval   "pass gmail/hjsizemore"
+
+# Gmail: trey.sizemore
+account        gmail-trey
+host           smtp.gmail.com
+port           587
+from           trey.sizemore@gmail.com
+user           trey.sizemore@gmail.com
+passwordeval   "pass gmail/treysizemore"
+
+account default : fastmail
