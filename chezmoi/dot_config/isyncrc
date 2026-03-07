@@ -9,6 +9,8 @@ Host imap.gmail.com
 User hjsizemore@gmail.com
 PassCmd "pass gmail/hjsizemore"
 TLSType IMAPS
+PipelineDepth 1
+TLSVersions +1.2
 CertificateFile /etc/ssl/certs/ca-certificates.crt
 
 IMAPStore gmail-hj-remote
@@ -33,6 +35,8 @@ Host imap.gmail.com
 User trey.sizemore@gmail.com
 PassCmd "pass gmail/treysizemore"
 TLSType IMAPS
+PipelineDepth 1
+TLSVersions +1.2
 CertificateFile /etc/ssl/certs/ca-certificates.crt
 
 IMAPStore gmail-trey-remote
@@ -58,6 +62,7 @@ Port 993
 User trey@fastmail.fm
 PassCmd "pass mail/fastmail"
 TLSType IMAPS
+PipelineDepth 1
 TLSVersions +1.2
 CertificateFile /etc/ssl/certs/ca-certificates.crt
 
