@@ -8,7 +8,7 @@ IMAPAccount gmail-hj
 Host imap.gmail.com
 User hjsizemore@gmail.com
 PassCmd "pass gmail/hjsizemore"
-SSLType IMAPS
+TLSType IMAPS
 CertificateFile /etc/ssl/certs/ca-certificates.crt
 
 IMAPStore gmail-hj-remote
@@ -32,7 +32,7 @@ IMAPAccount gmail-trey
 Host imap.gmail.com
 User trey.sizemore@gmail.com
 PassCmd "pass gmail/treysizemore"
-SSLType IMAPS
+TLSType IMAPS
 CertificateFile /etc/ssl/certs/ca-certificates.crt
 
 IMAPStore gmail-trey-remote
@@ -47,6 +47,32 @@ Channel gmail-trey
 Far :gmail-trey-remote:
 Near :gmail-trey-local:
 Patterns * ![Gmail]/All\ Mail ![Gmail]/Important ![Gmail]/Starred
+Create Both
+Expunge Both
+SyncState *
+
+# ─── Fastmail: trey@fastmail.fm ───────────────────────────────────────────────
+IMAPAccount fastmail
+Host imap.fastmail.com
+Port 993
+User trey@fastmail.fm
+PassCmd "pass mail/fastmail"
+TLSType IMAPS
+TLSVersions +1.2
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+IMAPStore fastmail-remote
+Account fastmail
+
+MaildirStore fastmail-local
+SubFolders Verbatim
+Path ~/.mail/fastmail/
+Inbox ~/.mail/fastmail/INBOX
+
+Channel fastmail
+Far :fastmail-remote:
+Near :fastmail-local:
+Patterns *
 Create Both
 Expunge Both
 SyncState *
