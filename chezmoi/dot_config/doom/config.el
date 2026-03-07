@@ -28,6 +28,11 @@
   (when (file-exists-p creds)
     (load creds)))
 
+;; Use passphrase-free GPG key for plstore — no prompts ever
+;; Key created with: gpg --batch --gen-key (no-protection, plstore@localhost)
+(setq plstore-encrypt-to "plstore@localhost")
+(setq plstore-cache-passphrase-for-symmetric-encryption t)
+
 
 ;; ──────────────────────────────────────────
 ;; Org Configuration
@@ -185,8 +190,10 @@
 ;; Org-Modern
 ;; ──────────────────────────────────────────
 
-(after! org-modern
-  (add-hook 'org-mode-hook #'org-modern-mode))
+(use-package! org-modern
+  :hook
+  (org-mode . org-modern-mode)
+  (org-agenda-finalize . org-modern-agenda))
 
 
 ;; ──────────────────────────────────────────
@@ -261,27 +268,61 @@
 
 ;; ──────────────────────────────────────────
 ;; Calfw — visual month/week calendar grid
-;; Force-loaded at startup so cfw: functions are always available
+;; Uses calfw- prefix (not cfw:) — correct for this version of emacs-calfw
 ;; ──────────────────────────────────────────
 
-(require 'calfw)
-(require 'calfw-org)
+;; Week starts on Monday (must be global — set before calfw renders)
+(setq calendar-week-start-day 1)
 
-(setq cfw:org-capture-template "t")
-(setq cfw:face-title              '(:foreground "#61afef" :weight bold)
-      cfw:face-header             '(:foreground "#98c379" :weight bold)
-      cfw:face-sunday             '(:foreground "#e06c75")
-      cfw:face-saturday           '(:foreground "#e5c07b")
-      cfw:face-today-title        '(:foreground "#61afef" :weight bold :underline t)
-      cfw:face-today              '(:foreground "#61afef"))
+;; calfw has no evil-collection bindings — use Emacs state so native keys work
+;; Native keys: M=month W=week T=two-weeks D=day t=today g=goto-date
+;;              f/b=forward/back n/p=next/prev-day [/]=prev/next-week
+(evil-set-initial-state 'calfw-calendar-mode 'emacs)
+
+;; Explicit bindings for quit and calendar refresh
+(map! :map calfw-calendar-mode-map
+      "q" #'calfw-quit-calendar
+      "r" #'org-gcal-fetch)
 
 (defun my/open-calendar ()
   "Open calfw org calendar view."
   (interactive)
-  (cfw:open-org-calendar))
+  (require 'calfw)
+  (require 'calfw-compat)
+  (require 'calfw-org)
+  ;; Face customization using calfw- prefix (v2.0+ naming)
+  (set-face-attribute 'calfw-title-face       nil :foreground "#61afef" :weight 'bold)
+  (set-face-attribute 'calfw-header-face      nil :foreground "#98c379" :weight 'bold)
+  (set-face-attribute 'calfw-sunday-face      nil :foreground "#e06c75")
+  (set-face-attribute 'calfw-saturday-face    nil :foreground "#e5c07b")
+  (set-face-attribute 'calfw-today-title-face nil :foreground "#61afef" :weight 'bold :underline t)
+  (set-face-attribute 'calfw-today-face       nil :foreground "#61afef")
+  (calfw-org-open-calendar))
 
 (map! :leader
       :desc "Visual calendar" "o v" #'my/open-calendar)
+
+
+;; ── Wash email: strip citations, signature, blank lines in one shot ─────────
+(defun my/wash-email ()
+  "Strip citations, signature and excess blank lines from current message."
+  (interactive)
+  (gnus-article-hide-citation)
+  (gnus-article-hide-signature)
+  (gnus-article-strip-multiple-blank-lines))
+
+;; ── Reply: bottom-post and clean compose buffer ───────────────────────────
+(setq message-cite-reply-position 'below)   ; cursor below quote on reply
+
+(defun my/message-clean-reply ()
+  "Remove excess blank lines in reply compose buffer."
+  (interactive)
+  (save-excursion
+    (message-goto-body)
+    (flush-lines "^[[:space:]]*$")))
+
+(map! :map message-mode-map
+      :n "WW" #'my/message-clean-reply)
 
 
 ;; ══════════════════════════════════════════
@@ -292,13 +333,13 @@
 
   ;; ── Core settings ──────────────────────────────────────────────────────────
   (setq mu4e-maildir                    "~/.mail"
-        mu4e-get-mail-command           "mbsync gmail-hj gmail-trey"
+        mu4e-get-mail-command           "mbsync fastmail gmail-hj gmail-trey"
         mu4e-update-interval            (* 10 60)       ; sync every 10 minutes
         mu4e-index-update-in-background t
         mu4e-use-fancy-chars            t
         mu4e-view-show-images           t
         mu4e-view-image-max-width       800
-        mu4e-compose-signature-auto-include nil
+        mu4e-compose-signature-auto-include t           ; signature enabled
         mu4e-sent-messages-behavior     'delete         ; Gmail saves sent automatically
 
         ;; Context behavior
@@ -324,9 +365,35 @@
         send-mail-function              'sendmail-send-it
         sendmail-program                (executable-find "msmtp")
         message-send-mail-function      'message-send-mail-with-sendmail
-        message-sendmail-f-is-evil      t)
+        message-sendmail-f-is-evil      t
 
-  ;; ── Maildir shortcuts (appear in Maildirs section of main view) ───────────
+        ;; Browser for links/HTML — must be set here to ensure xdg-open is used
+        browse-url-browser-function     'browse-url-xdg-open)
+
+  ;; ── Headers display — date (04MAR2026 14:35), size, flags ─────────────────
+  (defun my/mu4e-date-uppercase (msg)
+    "Return date formatted as 04MAR2026 14:35 (uppercase month)."
+    (upcase (format-time-string "%d%b%Y %H:%M"
+      (mu4e-message-field msg :date))))
+
+  (add-to-list 'mu4e-header-info-custom
+    '(:date-upper . (:name "Date"
+                     :shortname "Date"
+                     :function my/mu4e-date-uppercase)))
+
+  (setq mu4e-headers-fields
+    '((:date-upper  . 20)   ; "04MAR2026 14:35"
+      (:flags       .  6)
+      (:size        .  7)   ; "245K" or "2.3M"
+      (:from        . 22)
+      (:subject     . nil)))
+
+  ;; ── Visible header fields in message view ─────────────────────────────────
+  (setq mu4e-view-fields
+    '(:from :to :subject :date :flags :maildir :mailing-list
+      :attachments :x-mailer))
+
+  ;; ── Maildir shortcuts (Maildirs section of main view) ─────────────────────
   (setq mu4e-maildir-shortcuts
     '((:maildir "/fastmail/INBOX"               :key ?f)
       (:maildir "/fastmail/INBOX.Archive"       :key ?a)
@@ -341,46 +408,50 @@
     (list
 
       ;; Fastmail: trey@fastmail.fm
+      ;; Signature loaded from ~/.signature (only this account)
       (make-mu4e-context
         :name "Fastmail"
         :match-func (lambda (msg)
           (when msg
             (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
-        :vars '((user-mail-address    . "trey@fastmail.fm")
-                (user-full-name       . "Trey Sizemore")
-                (mu4e-sent-folder     . "/fastmail/INBOX.Sent")
-                (mu4e-drafts-folder   . "/fastmail/INBOX.Drafts")
-                (mu4e-trash-folder    . "/fastmail/INBOX.Deleted Messages")
-                (mu4e-refile-folder   . "/fastmail/INBOX.Archive")
-                (smtpmail-smtp-user   . "trey@fastmail.fm")))
+        :vars '((user-mail-address       . "trey@fastmail.fm")
+                (user-full-name          . "Trey Sizemore")
+                (mu4e-sent-folder        . "/fastmail/INBOX.Sent")
+                (mu4e-drafts-folder      . "/fastmail/INBOX.Drafts")
+                (mu4e-trash-folder       . "/fastmail/INBOX.Deleted Messages")
+                (mu4e-refile-folder      . "/fastmail/INBOX.Archive")
+                (smtpmail-smtp-user      . "trey@fastmail.fm")
+                (mu4e-compose-signature  . my/fastmail-signature)))
 
-      ;; Gmail: hjsizemore@gmail.com
+      ;; Gmail: hjsizemore@gmail.com — no signature
       (make-mu4e-context
         :name "Gmail-HJ"
         :match-func (lambda (msg)
           (when msg
             (string-prefix-p "/gmail-hj" (mu4e-message-field msg :maildir))))
-        :vars '((user-mail-address    . "hjsizemore@gmail.com")
-                (user-full-name       . "Trey Sizemore")
-                (mu4e-sent-folder     . "/gmail-hj/[Gmail]/Sent Mail")
-                (mu4e-drafts-folder   . "/gmail-hj/[Gmail]/Drafts")
-                (mu4e-trash-folder    . "/gmail-hj/[Gmail]/Trash")
-                (mu4e-refile-folder   . "/gmail-hj/[Gmail]/All Mail")
-                (smtpmail-smtp-user   . "hjsizemore@gmail.com")))
+        :vars '((user-mail-address       . "hjsizemore@gmail.com")
+                (user-full-name          . "Trey Sizemore")
+                (mu4e-sent-folder        . "/gmail-hj/[Gmail]/Sent Mail")
+                (mu4e-drafts-folder      . "/gmail-hj/[Gmail]/Drafts")
+                (mu4e-trash-folder       . "/gmail-hj/[Gmail]/Trash")
+                (mu4e-refile-folder      . "/gmail-hj/[Gmail]/All Mail")
+                (smtpmail-smtp-user      . "hjsizemore@gmail.com")
+                (mu4e-compose-signature  . nil)))
 
-      ;; Gmail: trey.sizemore@gmail.com
+      ;; Gmail: trey.sizemore@gmail.com — no signature
       (make-mu4e-context
         :name "Gmail-Trey"
         :match-func (lambda (msg)
           (when msg
             (string-prefix-p "/gmail-trey" (mu4e-message-field msg :maildir))))
-        :vars '((user-mail-address    . "trey.sizemore@gmail.com")
-                (user-full-name       . "Trey Sizemore")
-                (mu4e-sent-folder     . "/gmail-trey/[Gmail]/Sent Mail")
-                (mu4e-drafts-folder   . "/gmail-trey/[Gmail]/Drafts")
-                (mu4e-trash-folder    . "/gmail-trey/[Gmail]/Trash")
-                (mu4e-refile-folder   . "/gmail-trey/[Gmail]/All Mail")
-                (smtpmail-smtp-user   . "trey.sizemore@gmail.com")))))
+        :vars '((user-mail-address       . "trey.sizemore@gmail.com")
+                (user-full-name          . "Trey Sizemore")
+                (mu4e-sent-folder        . "/gmail-trey/[Gmail]/Sent Mail")
+                (mu4e-drafts-folder      . "/gmail-trey/[Gmail]/Drafts")
+                (mu4e-trash-folder       . "/gmail-trey/[Gmail]/Trash")
+                (mu4e-refile-folder      . "/gmail-trey/[Gmail]/All Mail")
+                (smtpmail-smtp-user      . "trey.sizemore@gmail.com")
+                (mu4e-compose-signature  . nil)))))
 
   ;; ── Bookmarks ──────────────────────────────────────────────────────────────
   (add-to-list 'mu4e-bookmarks
@@ -402,7 +473,20 @@
 
   ;; ── Keybinds ───────────────────────────────────────────────────────────────
   (map! :map mu4e-view-mode-map
-        :n "C" #'mu4e-org-store-and-capture))               ; capture email to org
+        :n "C" #'mu4e-org-store-and-capture                ; capture email to org
+        :n "WW" #'my/wash-email                            ; wash all
+        :n "Wc" #'gnus-article-hide-citation               ; strip citations / quoted replies
+        :n "Ws" #'gnus-article-hide-signature              ; hide signature block
+        :n "Wl" #'gnus-article-strip-multiple-blank-lines  ; remove excess blank lines
+        :n "Wq" #'gnus-article-fill-cited-article          ; reflow/fill long lines
+        :n "Wh" #'gnus-article-wash-html)                  ; render HTML part
+
+  ;; U in headers view = sync (not "unmark all" which is the default)
+  (map! :map mu4e-headers-mode-map
+        :n "U" #'mu4e-update-mail-and-index)
+
+  ;; Auto-fetch Google Calendar every time mail syncs
+  (add-hook 'mu4e-update-post-hook #'org-gcal-fetch))
 
 
 ;; ── mu4e agenda keybinds (alongside existing SPC o g / SPC o v) ───────────
@@ -414,8 +498,8 @@
 
 ;; ── org-mu4e link support ──────────────────────────────────────────────────
 (after! mu4e
-(require 'mu4e-org)
-(setq mu4e-org-link-query-in-headers-mode nil))
+  (require 'mu4e-org)
+  (setq mu4e-org-link-query-in-headers-mode nil))
 
 
 ;; ── msmtp: auto-select sending account from From header ───────────────────
@@ -433,6 +517,53 @@
 (add-hook 'message-send-hook #'my/msmtp-select-account)
 
 
+;; ── Signature: Fastmail only, loaded from ~/.signature ────────────────────
+;; Create ~/.signature with your desired signature text.
+;; Example:
+;;   Trey Sizemore
+;;   RevLogic | PickleballHut | Dynamite Doubles
+;;   trey@fastmail.fm
+(defun my/fastmail-signature ()
+  "Load signature from ~/.signature file."
+  (if (file-exists-p "~/.signature")
+      (with-temp-buffer
+        (insert-file-contents "~/.signature")
+        (buffer-string))
+    "Trey Sizemore"))   ; fallback if file missing
+
+
+;; ── PGP / mml-sec signing and encryption ──────────────────────────────────
+;; Requires gpg key to be set up: gpg --list-secret-keys
+;; Sign with C-c RET s p while composing
+;; Encrypt with C-c RET e p while composing
+(after! mu4e
+  (setq mml-secure-openpgp-sign-with-sender t   ; auto-select key from From address
+        mml-secure-openpgp-encrypt-to-self  t   ; always encrypt a copy to yourself
+        mm-verify-option                    'always
+        mm-decrypt-option                   'always))
+
+;; Ensure epg uses pinentry-tty or pinentry-qt (not loopback) on Arch
+(setq epg-pinentry-mode 'loopback)
+
+
+;; ── Remove signature when replying ────────────────────────────────────────
+;; gs in normal mode while composing removes the signature block
+(defun my/remove-signature ()
+  "Remove signature (everything from '-- ' separator) in compose buffer."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "^-- $" nil t)
+      (delete-region (match-beginning 0) (point-max))
+      (message "Signature removed."))))
+
+(map! :map message-mode-map
+      :n "gs" #'my/remove-signature)
+
+
+
+
+
 ;; ── Open HTML part of email in system browser ─────────────────────────────
 (defun my/mu4e-view-in-xdg-browser (msg)
   "Save the HTML part of MSG to a temp file and open in system browser."
@@ -444,17 +575,17 @@
       (message "No HTML part found in this message."))))
 
 
-;; ── Extract all URLs from email into a searchable list ────────────────────
+;; ── Extract all URLs from the rendered view buffer ────────────────────────
+;; Fixed: scans the visible buffer rather than raw message fields,
+;; so it works for plain text and NO-CONVERSION messages too.
 (defun my/mu4e-extract-links (msg)
-  "Extract all URLs from MSG and open selected one via completing-read."
-  (let* ((body (or (mu4e-message-field msg :body-html)
-                   (mu4e-message-field msg :body-txt) ""))
-         (urls '()))
-    (with-temp-buffer
-      (insert body)
-      (goto-char (point-min))
-      (while (re-search-forward "https?://[^ \t\n\r<>\"']+" nil t)
-        (push (match-string 0) urls)))
+  "Extract all URLs visible in the current view buffer and open selected one."
+  (let ((urls '()))
+    (save-excursion
+      (with-current-buffer (mu4e-get-view-buffer)
+        (goto-char (point-min))
+        (while (re-search-forward "https?://[^ \t\n\r<>\"'\\[\\]]+" nil t)
+          (push (match-string 0) urls))))
     (if urls
         (browse-url (completing-read "Open URL: " (delete-dups (reverse urls))))
       (message "No URLs found in this message."))))
