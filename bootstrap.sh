@@ -136,24 +136,12 @@ grep -q "^export DOTFILES_PATH=" "${DOTFILES_PATH}/install-config" ||
 
 success "install-config configured"
 
-# ── Step 8: Patch install script for CachyOS kernel ──────────────────────────
-info "Step 8/12: Patching install script for CachyOS kernel"
-if ! grep -q "cachyos" "${DOTFILES_PATH}/install"; then
-  python3 - <<'PYEOF'
-import os
-path = os.path.expanduser("~/dotfiles/install")
-content = open(path).read()
-old = '  *zen*)\n    kernel_package="linux-zen-headers"\n    ;;'
-new = '  *zen*)\n    kernel_package="linux-zen-headers"\n    ;;\n  *cachyos*)\n    kernel_package="linux-cachyos-headers"\n    ;;'
-if old in content:
-    open(path, 'w').write(content.replace(old, new))
-    print("  Patched successfully")
-else:
-    print("  Pattern not found — may already be patched or script changed")
-PYEOF
-  success "Install script patched"
-else
+# ── Step 8: CachyOS kernel already supported in install script ─────────────────
+info "Step 8/12: Verifying CachyOS kernel support in install script"
+if grep -q "cachyos" "${DOTFILES_PATH}/install"; then
   success "Install script already supports CachyOS kernel"
+else
+  warn "CachyOS kernel pattern not found in install script — manual check needed"
 fi
 
 # ── Step 9: Run Ansible playbook ─────────────────────────────────────────────
