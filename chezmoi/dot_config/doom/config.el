@@ -564,6 +564,22 @@
 
 
 
+;; ── Dired rename: pre-populate minibuffer with original filename ──────────
+(defun my/dired-rename-with-filename ()
+  "Rename file with original name pre-populated in minibuffer."
+  (interactive)
+  (let* ((file (dired-get-filename))
+         (base (file-name-nondirectory file))
+         (dir  (file-name-directory file))
+         (new  (read-string "Rename to: " base)))
+    (rename-file file (concat dir new))
+    (revert-buffer)))
+
+(after! dired
+  (map! :map dired-mode-map
+        :n "R" #'my/dired-rename-with-filename))
+
+
 ;; ── Open HTML part of email in system browser ─────────────────────────────
 (defun my/mu4e-view-in-xdg-browser (msg)
   "Save the HTML part of MSG to a temp file and open in system browser."
