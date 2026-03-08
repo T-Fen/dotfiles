@@ -979,15 +979,6 @@ detect_and_prepare_gpu() {
   *cachyos*)
     kernel_package="linux-cachyos-headers"
     ;;
-  *cachyos*)
-    kernel_package="linux-cachyos-headers"
-    ;;
-  *cachyos*)
-    kernel_package="linux-cachyos-headers"
-    ;;
-  *cachyos*)
-    kernel_package="linux-cachyos-headers"
-    ;;
   *hardened*)
     kernel_package="linux-hardened-headers"
     ;;
