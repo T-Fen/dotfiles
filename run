@@ -49,7 +49,7 @@ format() {
     fi
   done
 
-  "${shfmt_cmd[@]}" "${shfmt_args[@]}" . .config/zsh/.{aliases,zprofile}
+  "${shfmt_cmd[@]}" "${shfmt_args[@]}" bootstrap.sh install .config/zsh/.aliases .config/zsh/.zprofile
 
   "${ruff_cmd[@]}" check --fix
   "${ruff_cmd[@]}" format "${@}"
