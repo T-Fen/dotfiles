@@ -70,7 +70,7 @@ IMAPStore fastmail-remote
 Account fastmail
 
 MaildirStore fastmail-local
-SubFolders Verbatim
+SubFolders Maildir++
 Path ~/.mail/fastmail/
 Inbox ~/.mail/fastmail/INBOX
 
