@@ -70,7 +70,7 @@ IMAPStore fastmail-remote
 Account fastmail
 
 MaildirStore fastmail-local
-SubFolders Maildir++
+SubFolders Verbatim
 Path ~/.mail/fastmail/
 Inbox ~/.mail/fastmail/INBOX
 
@@ -78,7 +78,7 @@ Channel fastmail
 Far :fastmail-remote:
 Near :fastmail-local:
 Patterns *
-Create Both
+Create Near
 Expunge Both
 Remove Both
 SyncState *
