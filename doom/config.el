@@ -200,7 +200,8 @@
 ;; Org Agenda — disable Evil so f/b/j/d/w/m keys work
 ;; ──────────────────────────────────────────
 
-(evil-set-initial-state 'org-agenda-mode 'emacs)
+(after! evil
+  (evil-set-initial-state 'org-agenda-mode 'emacs))
 
 
 ;; ──────────────────────────────────────────
@@ -277,7 +278,8 @@
 ;; calfw has no evil-collection bindings — use Emacs state so native keys work
 ;; Native keys: M=month W=week T=two-weeks D=day t=today g=goto-date
 ;;              f/b=forward/back n/p=next/prev-day [/]=prev/next-week
-(evil-set-initial-state 'calfw-calendar-mode 'emacs)
+(after! evil
+  (evil-set-initial-state 'calfw-calendar-mode 'emacs))
 
 ;; Explicit bindings for quit and calendar refresh
 (map! :map calfw-calendar-mode-map

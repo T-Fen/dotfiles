@@ -80,4 +80,5 @@ Near :fastmail-local:
 Patterns *
 Create Both
 Expunge Both
+Remove Both
 SyncState *
