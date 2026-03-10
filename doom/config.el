@@ -170,7 +170,8 @@
           ("d" "Dashboard"
            ((agenda ""
                     ((org-agenda-span 7)
-                     (org-agenda-start-on-weekday 1)
+                     (org-agenda-start-day nil)
+                     (org-agenda-start-on-weekday nil)
                      (org-agenda-show-all-dates nil)
                      (org-deadline-warning-days 7)
                      (org-agenda-block-separator "────────────────────────")
@@ -311,11 +312,12 @@
 
 
 ;; ──────────────────────────────────────────
-;; Org Agenda — disable Evil so f/b/j/d/w/m keys work
+;; Org Agenda — force Emacs state so r/g/f/b/t/d keys work
+;; Must be a hook, not evil-set-initial-state — evil-collection loads
+;; after config and silently overrides the initial state setting.
 ;; ──────────────────────────────────────────
 
-(after! evil
-  (evil-set-initial-state 'org-agenda-mode 'emacs))
+(add-hook 'org-agenda-mode-hook #'evil-emacs-state)
 
 
 ;; ──────────────────────────────────────────
