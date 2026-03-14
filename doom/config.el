@@ -523,8 +523,8 @@
   ;; ── Maildir shortcuts (Maildirs section of main view) ─────────────────────
   (setq mu4e-maildir-shortcuts
     '((:maildir "/fastmail/INBOX"               :key ?f)
-      (:maildir "/fastmail/INBOX.Archive"       :key ?a)
-      (:maildir "/fastmail/INBOX.Sent"          :key ?s)
+      (:maildir "/fastmail/Archive"       :key ?a)
+      (:maildir "/fastmail/Sent"          :key ?s)
       (:maildir "/gmail-hj/INBOX"               :key ?h)
       (:maildir "/gmail-hj/[Gmail]/Sent Mail"   :key ?H)
       (:maildir "/gmail-trey/INBOX"             :key ?t)
@@ -543,10 +543,10 @@
             (string-prefix-p "/fastmail" (mu4e-message-field msg :maildir))))
         :vars '((user-mail-address       . "trey@fastmail.fm")
                 (user-full-name          . "Trey Sizemore")
-                (mu4e-sent-folder        . "/fastmail/INBOX.Sent")
-                (mu4e-drafts-folder      . "/fastmail/INBOX.Drafts")
-                (mu4e-trash-folder       . "/fastmail/INBOX.Deleted Messages")
-                (mu4e-refile-folder      . "/fastmail/INBOX.Archive")
+                (mu4e-sent-folder        . "/fastmail/Sent")
+                (mu4e-drafts-folder      . "/fastmail/Drafts")
+                (mu4e-trash-folder       . "/fastmail/Deleted Messages")
+                (mu4e-refile-folder      . "/fastmail/Archive")
                 (smtpmail-smtp-user      . "trey@fastmail.fm")
                 (mu4e-compose-signature  . my/fastmail-signature)))
 
