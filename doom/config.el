@@ -111,6 +111,17 @@
            (file "~/org/inbox.org")
            "* %?\n:PROPERTIES:\n:CREATED: %U\n:END:\n")
 
+          ;; ── Inspiration capture — SPC X i ──────────────────────────────────
+          ;; Usage: copy URL in browser → SPC X → i
+          ;; org-cliplink-capture fetches the page title automatically and
+          ;; formats it as an org link. %x pastes the raw URL into :SOURCE:.
+          ;; After capture opens, type your notes then C-c C-c to finalize.
+          ;; Add screenshots with , a y (clipboard) or , a s (take inline).
+          ("i" "Inspiration" entry
+           (file+headline "~/org/pickleball-hut.org" "Inspiration")
+           "* TODO Review: %(org-cliplink-capture) :inspiration:membership:\n:PROPERTIES:\n:CAPTURED: %U\n:SOURCE: %x\n:END:\n\n%?"
+           :empty-lines 1)
+
           ("m" "Meeting" entry
            (file "~/org/inbox.org")
            "* %? :meeting:\n:PROPERTIES:\n:DATE: %T\n:ATTENDEES: \n:END:\n\n** Notes\n\n** Action Items\n")
@@ -158,7 +169,7 @@
   (setq org-agenda-custom-commands
         '(
 
-          ;; ── "d" Dashboard — SPC o a d ──────────────────────────────────────
+          ;; ── "d" Dashboard — SPC o d ────────────────────────────────────────
           ;; Primary daily view. Shows the 7-day calendar (with gcal events
           ;; and deadlines from all files), active items, and blocked items.
           ;;
@@ -298,7 +309,19 @@
                    (org-agenda-overriding-header "⚡ Active — Personal")))
             (todo "TODO"
                   ((org-agenda-files '("~/org/personal.org"))
-                   (org-agenda-overriding-header "📋 Backlog — Personal"))))))))
+                   (org-agenda-overriding-header "📋 Backlog — Personal")))))
+
+          ;; ── "I" Inspiration Board — SPC o i ────────────────────────────────
+          ;; All pages captured for the PickleballHut membership project,
+          ;; sorted newest-first. Press 'o' on any entry to open the source
+          ;; URL in your browser. TAB expands the entry to show your notes
+          ;; and any attached screenshots.
+          ("I" "Inspiration Board"
+           ((tags "inspiration"
+                  ((org-agenda-files '("~/org/pickleball-hut.org"))
+                   (org-agenda-overriding-header "💡 Inspiration Board — PickleballHut Membership\n")
+                   (org-agenda-sorting-strategy '(ts-down))
+                   (org-agenda-block-separator "────────────────────────"))))))))
 
 
 ;; ──────────────────────────────────────────
@@ -309,6 +332,31 @@
   :hook
   (org-mode . org-modern-mode)
   (org-agenda-finalize . org-modern-agenda))
+
+
+;; ──────────────────────────────────────────
+;; Org-Download — clipboard/drag screenshots into org notes
+;; ──────────────────────────────────────────
+;;
+;; Workflow:
+;;   1. Take a screenshot to clipboard (e.g. flameshot gui, or Print Screen)
+;;   2. In an org note: , a y  →  pastes image inline, stored via org-attach
+;;   3. Or: , a s  →  launches a screenshot selector and inserts inline
+;;
+;; Images are stored per-heading via org-attach (not a global flat dir),
+;; so each Inspiration entry keeps its screenshots next to it in the outline.
+
+(after! org-download
+  (setq org-download-method 'attach          ; tie images to the heading via org-attach
+        org-download-heading-lvl 1           ; use the top-level heading as attach root
+        org-download-image-org-width 600     ; display width rendered in the buffer
+        org-download-annotate-function       ; suppress the default #+DOWNLOADED: comment
+          (lambda (_link) "")))
+
+(map! :map org-mode-map
+      :localleader
+      "a y" #'org-download-clipboard          ; , a y — paste image from clipboard
+      "a s" #'org-download-screenshot)        ; , a s — take + insert screenshot inline
 
 
 ;; ──────────────────────────────────────────
@@ -391,6 +439,7 @@
       :desc "PH focused"         "o P" (lambda () (interactive) (org-agenda nil "P"))
       :desc "RevLogic focused"   "o R" (lambda () (interactive) (org-agenda nil "R"))
       :desc "Personal focused"   "o X" (lambda () (interactive) (org-agenda nil "X"))
+      :desc "Inspiration Board"  "o i" (lambda () (interactive) (org-agenda nil "I"))
       :desc "Open mu4e"          "o m" #'mu4e
       :desc "Visual calendar"    "o v" #'my/open-calendar)
 
@@ -438,18 +487,36 @@
   (gnus-article-hide-signature)
   (gnus-article-strip-multiple-blank-lines))
 
-;; ── Reply: bottom-post and clean compose buffer ───────────────────────────
-(setq message-cite-reply-position 'below)   ; cursor below quote on reply
+;; ── Reply: auto-strip citations and place cursor at bottom ──────────────────
+;; org-msg is enabled via (mu4e +org) — replies use org-msg-edit-mode.
+;; Quoted text is inserted AFTER org-msg-post-setup-hook fires.
+;; We capture the buffer at hook time and use a timer to wait for insertion.
+(add-hook 'org-msg-post-setup-hook
+  (lambda ()
+    (let ((compose-buf (current-buffer)))
+      (run-with-timer 0.5 nil
+        (lambda ()
+          (when (buffer-live-p compose-buf)
+            (with-current-buffer compose-buf
+              (save-excursion
+                (goto-char (point-min))
+                (flush-lines "^[[:space:]]*>")    ; remove quoted lines
+                (flush-lines "^[[:space:]]*$"))   ; remove blank lines
+              (goto-char (point-max)))))))))
 
+;; WW available manually in compose buffer if needed
 (defun my/message-clean-reply ()
-  "Remove excess blank lines in reply compose buffer."
+  "Remove citations and excess blank lines in reply compose buffer."
   (interactive)
   (save-excursion
-    (message-goto-body)
-    (flush-lines "^[[:space:]]*$")))
+    (goto-char (point-min))
+    (flush-lines "^[[:space:]]*>")
+    (flush-lines "^[[:space:]]*$"))
+  (goto-char (point-max)))
 
 (map! :map message-mode-map
-      :n "WW" #'my/message-clean-reply)
+      :n "WW" #'my/message-clean-reply
+      :i "C-c w" #'my/message-clean-reply)
 
 
 ;; ══════════════════════════════════════════
@@ -523,8 +590,8 @@
   ;; ── Maildir shortcuts (Maildirs section of main view) ─────────────────────
   (setq mu4e-maildir-shortcuts
     '((:maildir "/fastmail/INBOX"               :key ?f)
-      (:maildir "/fastmail/Archive"       :key ?a)
-      (:maildir "/fastmail/Sent"          :key ?s)
+      (:maildir "/fastmail/Archive"             :key ?a)
+      (:maildir "/fastmail/Sent"                :key ?s)
       (:maildir "/gmail-hj/INBOX"               :key ?h)
       (:maildir "/gmail-hj/[Gmail]/Sent Mail"   :key ?H)
       (:maildir "/gmail-trey/INBOX"             :key ?t)
@@ -712,34 +779,13 @@
 ;; Fixed: scans the visible buffer rather than raw message fields,
 ;; so it works for plain text and NO-CONVERSION messages too.
 (defun my/mu4e-extract-links (msg)
-  "Extract all URLs from the mu4e article view buffer.
-Works for both HTML (shr-url properties) and plain text messages."
-  (let ((urls '())
-        (buf (get-buffer "*mu4e-article*")))
-    (if (not buf)
-        (message "No article buffer found.")
-      (with-current-buffer buf
-        ;; Method 1: shr-url text properties (HTML rendered messages)
+  "Extract all URLs visible in the current view buffer and open selected one."
+  (let ((urls '()))
+    (save-excursion
+      (with-current-buffer (mu4e-get-view-buffer)
         (goto-char (point-min))
-        (while (not (eobp))
-          (let ((url (get-text-property (point) 'shr-url)))
-            (when url (push url urls)))
-          (goto-char (or (next-single-property-change (point) 'shr-url)
-                         (point-max))))
-        ;; Method 2: regex scan for plain text messages
-        ;; Join lines first to handle wrapped URLs
-        (when (null urls)
-          (let ((text (buffer-substring-no-properties (point-min) (point-max)))
-                (url-regex "https?://[^ 	
-<>"']+"))
-            ;; Remove soft line breaks and rejoin wrapped URLs
-            (setq text (replace-regexp-in-string "
-+" " " text))
-            (with-temp-buffer
-              (insert text)
-              (goto-char (point-min))
-              (while (re-search-forward url-regex nil t)
-                (push (match-string 0) urls)))))))
+        (while (re-search-forward "https?://[^ \t\n\r<>\"'\\[\\]]+" nil t)
+          (push (match-string 0) urls))))
     (if urls
         (browse-url (completing-read "Open URL: " (delete-dups (reverse urls))))
       (message "No URLs found in this message."))))
