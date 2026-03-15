@@ -497,23 +497,23 @@
         ;; Browser for links/HTML — must be set here to ensure xdg-open is used
         browse-url-browser-function     'browse-url-xdg-open)
 
-  ;; ── Headers display — date (March 02, 2026), size, flags ──────────────────
-  (defun my/mu4e-date-long (msg)
-    "Return date formatted as March 02, 2026."
-    (format-time-string "%B %d, %Y"
-      (mu4e-message-field msg :date)))
+  ;; ── Headers display — date (04MAR2026 14:35), size, flags ─────────────────
+  (defun my/mu4e-date-uppercase (msg)
+    "Return date formatted as 04MAR2026 14:35 (uppercase month)."
+    (upcase (format-time-string "%d%b%Y %H:%M"
+      (mu4e-message-field msg :date))))
 
   (add-to-list 'mu4e-header-info-custom
-    '(:date-long . (:name "Date"
-                    :shortname "Date"
-                    :function my/mu4e-date-long)))
+    '(:date-upper . (:name "Date"
+                     :shortname "Date"
+                     :function my/mu4e-date-uppercase)))
 
   (setq mu4e-headers-fields
-    '((:date-long  . 18)   ; "March 02, 2026"
-      (:flags      .  6)
-      (:size       .  7)   ; "245K" or "2.3M"
-      (:from       . 22)
-      (:subject    . nil)))
+    '((:date-upper  . 20)   ; "04MAR2026 14:35"
+      (:flags       .  6)
+      (:size        .  7)   ; "245K" or "2.3M"
+      (:from        . 22)
+      (:subject     . nil)))
 
   ;; ── Visible header fields in message view ─────────────────────────────────
   (setq mu4e-view-fields
@@ -712,13 +712,18 @@
 ;; Fixed: scans the visible buffer rather than raw message fields,
 ;; so it works for plain text and NO-CONVERSION messages too.
 (defun my/mu4e-extract-links (msg)
-  "Extract all URLs visible in the current view buffer and open selected one."
-  (let ((urls '()))
-    (save-excursion
-      (with-current-buffer (mu4e-get-view-buffer)
+  "Extract all URLs from the mu4e article view buffer using shr-url properties."
+  (let ((urls '())
+        (buf (get-buffer "*mu4e-article*")))
+    (if (not buf)
+        (message "No article buffer found.")
+      (with-current-buffer buf
         (goto-char (point-min))
-        (while (re-search-forward "https?://[^ \t\n\r<>\"'\\[\\]]+" nil t)
-          (push (match-string 0) urls))))
+        (while (not (eobp))
+          (let ((url (get-text-property (point) 'shr-url)))
+            (when url (push url urls)))
+          (goto-char (or (next-single-property-change (point) 'shr-url)
+                         (point-max))))))
     (if urls
         (browse-url (completing-read "Open URL: " (delete-dups (reverse urls))))
       (message "No URLs found in this message."))))
