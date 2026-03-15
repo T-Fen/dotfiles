@@ -497,23 +497,23 @@
         ;; Browser for links/HTML — must be set here to ensure xdg-open is used
         browse-url-browser-function     'browse-url-xdg-open)
 
-  ;; ── Headers display — date (04MAR2026 14:35), size, flags ─────────────────
-  (defun my/mu4e-date-uppercase (msg)
-    "Return date formatted as 04MAR2026 14:35 (uppercase month)."
-    (upcase (format-time-string "%d%b%Y %H:%M"
-      (mu4e-message-field msg :date))))
+  ;; ── Headers display — date (March 02, 2026), size, flags ──────────────────
+  (defun my/mu4e-date-long (msg)
+    "Return date formatted as March 02, 2026."
+    (format-time-string "%B %d, %Y"
+      (mu4e-message-field msg :date)))
 
   (add-to-list 'mu4e-header-info-custom
-    '(:date-upper . (:name "Date"
-                     :shortname "Date"
-                     :function my/mu4e-date-uppercase)))
+    '(:date-long . (:name "Date"
+                    :shortname "Date"
+                    :function my/mu4e-date-long)))
 
   (setq mu4e-headers-fields
-    '((:date-upper  . 20)   ; "04MAR2026 14:35"
-      (:flags       .  6)
-      (:size        .  7)   ; "245K" or "2.3M"
-      (:from        . 22)
-      (:subject     . nil)))
+    '((:date-long  . 18)   ; "March 02, 2026"
+      (:flags      .  6)
+      (:size       .  7)   ; "245K" or "2.3M"
+      (:from       . 22)
+      (:subject    . nil)))
 
   ;; ── Visible header fields in message view ─────────────────────────────────
   (setq mu4e-view-fields
