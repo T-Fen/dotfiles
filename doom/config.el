@@ -712,18 +712,34 @@
 ;; Fixed: scans the visible buffer rather than raw message fields,
 ;; so it works for plain text and NO-CONVERSION messages too.
 (defun my/mu4e-extract-links (msg)
-  "Extract all URLs from the mu4e article view buffer using shr-url properties."
+  "Extract all URLs from the mu4e article view buffer.
+Works for both HTML (shr-url properties) and plain text messages."
   (let ((urls '())
         (buf (get-buffer "*mu4e-article*")))
     (if (not buf)
         (message "No article buffer found.")
       (with-current-buffer buf
+        ;; Method 1: shr-url text properties (HTML rendered messages)
         (goto-char (point-min))
         (while (not (eobp))
           (let ((url (get-text-property (point) 'shr-url)))
             (when url (push url urls)))
           (goto-char (or (next-single-property-change (point) 'shr-url)
-                         (point-max))))))
+                         (point-max))))
+        ;; Method 2: regex scan for plain text messages
+        ;; Join lines first to handle wrapped URLs
+        (when (null urls)
+          (let ((text (buffer-substring-no-properties (point-min) (point-max)))
+                (url-regex "https?://[^ 	
+<>"']+"))
+            ;; Remove soft line breaks and rejoin wrapped URLs
+            (setq text (replace-regexp-in-string "
++" " " text))
+            (with-temp-buffer
+              (insert text)
+              (goto-char (point-min))
+              (while (re-search-forward url-regex nil t)
+                (push (match-string 0) urls)))))))
     (if urls
         (browse-url (completing-read "Open URL: " (delete-dups (reverse urls))))
       (message "No URLs found in this message."))))
