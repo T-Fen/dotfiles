@@ -866,13 +866,17 @@
 
   ;; ── Maildir shortcuts (Maildirs section of main view) ─────────────────────
   (setq mu4e-maildir-shortcuts
-    '((:maildir "/fastmail/INBOX"               :key ?f)
-      (:maildir "/fastmail/Archive"             :key ?a)
-      (:maildir "/fastmail/Sent"                :key ?s)
-      (:maildir "/gmail-hj/INBOX"               :key ?h)
-      (:maildir "/gmail-hj/[Gmail]/Sent Mail"   :key ?H)
-      (:maildir "/gmail-trey/INBOX"             :key ?t)
-      (:maildir "/gmail-trey/[Gmail]/Sent Mail" :key ?T)))
+    '((:maildir "/fastmail/INBOX"                     :key ?f)
+      (:maildir "/fastmail/Archive"                   :key ?a)
+      (:maildir "/fastmail/Sent"                      :key ?s)
+      (:maildir "/gmail-hj/INBOX"                     :key ?h)
+      (:maildir "/gmail-hj/[Gmail]/Sent Mail"         :key ?H)
+      (:maildir "/gmail-trey/INBOX"                   :key ?t)
+      (:maildir "/gmail-trey/[Gmail]/Sent Mail"       :key ?T)
+      (:maildir "/dynamite-doubles/INBOX"             :key ?d)
+      (:maildir "/dynamite-doubles/[Gmail]/Sent Mail" :key ?D)
+      (:maildir "/pickleballhut/INBOX"                :key ?p)
+      (:maildir "/pickleballhut/[Gmail]/Sent Mail"    :key ?P)))
 
   ;; ── Contexts (one per account) ─────────────────────────────────────────────
   (setq mu4e-contexts
@@ -922,12 +926,44 @@
                 (mu4e-trash-folder       . "/gmail-trey/[Gmail]/Trash")
                 (mu4e-refile-folder      . "/gmail-trey/[Gmail]/All Mail")
                 (smtpmail-smtp-user      . "trey.sizemore@gmail.com")
-                (mu4e-compose-signature  . nil)))))
+                (mu4e-compose-signature  . nil)))
+
+      ;; Google Workspace: trey@dynamitedoubles.com
+      ;; Signature loaded from ~/.signatures/dynamite-doubles.txt (create if needed)
+      (make-mu4e-context
+        :name "DynamiteDoubles"
+        :match-func (lambda (msg)
+          (when msg
+            (string-prefix-p "/dynamite-doubles" (mu4e-message-field msg :maildir))))
+        :vars '((user-mail-address       . "trey@dynamitedoubles.com")
+                (user-full-name          . "Trey Sizemore")
+                (mu4e-sent-folder        . "/dynamite-doubles/[Gmail]/Sent Mail")
+                (mu4e-drafts-folder      . "/dynamite-doubles/[Gmail]/Drafts")
+                (mu4e-trash-folder       . "/dynamite-doubles/[Gmail]/Trash")
+                (mu4e-refile-folder      . "/dynamite-doubles/[Gmail]/All Mail")
+                (smtpmail-smtp-user      . "trey@dynamitedoubles.com")
+                (mu4e-compose-signature  . my/dd-signature)))
+
+      ;; Google Workspace: trey@pickleballhut.com
+      ;; Signature loaded from ~/.signatures/pickleballhut.txt (create if needed)
+      (make-mu4e-context
+        :name "PickleballHut"
+        :match-func (lambda (msg)
+          (when msg
+            (string-prefix-p "/pickleballhut" (mu4e-message-field msg :maildir))))
+        :vars '((user-mail-address       . "trey@pickleballhut.com")
+                (user-full-name          . "Trey Sizemore")
+                (mu4e-sent-folder        . "/pickleballhut/[Gmail]/Sent Mail")
+                (mu4e-drafts-folder      . "/pickleballhut/[Gmail]/Drafts")
+                (mu4e-trash-folder       . "/pickleballhut/[Gmail]/Trash")
+                (mu4e-refile-folder      . "/pickleballhut/[Gmail]/All Mail")
+                (smtpmail-smtp-user      . "trey@pickleballhut.com")
+                (mu4e-compose-signature  . my/pbh-signature)))))
 
   ;; ── Bookmarks ──────────────────────────────────────────────────────────────
   (add-to-list 'mu4e-bookmarks
     '(:name "All Inboxes"
-      :query "maildir:/fastmail/INBOX OR maildir:/gmail-hj/INBOX OR maildir:/gmail-trey/INBOX"
+      :query "maildir:/fastmail/INBOX OR maildir:/gmail-hj/INBOX OR maildir:/gmail-trey/INBOX OR maildir:/dynamite-doubles/INBOX OR maildir:/pickleballhut/INBOX"
       :key ?i))
   (add-to-list 'mu4e-bookmarks
     '(:name "All Unread"
@@ -972,9 +1008,11 @@
   (save-excursion
     (let* ((from (message-fetch-field "from"))
            (account (cond
-                     ((string-match "trey@fastmail.fm" from)        "fastmail")
-                     ((string-match "hjsizemore@gmail.com" from)    "gmail-hj")
-                     ((string-match "trey.sizemore@gmail.com" from) "gmail-trey")
+                     ((string-match "trey@dynamitedoubles.com" from) "dynamite-doubles")
+                     ((string-match "trey@pickleballhut.com" from)   "pickleballhut")
+                     ((string-match "trey@fastmail.fm" from)         "fastmail")
+                     ((string-match "hjsizemore@gmail.com" from)     "gmail-hj")
+                     ((string-match "trey.sizemore@gmail.com" from)  "gmail-trey")
                      (t "fastmail"))))
       (setq message-sendmail-extra-arguments (list "--account" account)))))
 
@@ -994,6 +1032,42 @@
         (insert-file-contents "~/.signature")
         (buffer-string))
     "Trey Sizemore"))   ; fallback if file missing
+
+
+;; ── Signature: Dynamite Doubles ───────────────────────────────────────────
+;; Create ~/.signatures/dynamite-doubles.txt with your desired signature text.
+;; Example:
+;;   Trey Sizemore
+;;   Co-Founder, Dynamite Doubles
+;;   trey@dynamitedoubles.com | dynamitedoubles.com
+(defun my/dd-signature ()
+  "Load Dynamite Doubles signature from ~/.signatures/dynamite-doubles.txt."
+  (let ((f (expand-file-name "~/.signatures/dynamite-doubles.txt")))
+    (if (file-exists-p f)
+        (with-temp-buffer
+          (insert-file-contents f)
+          (buffer-string))
+      "Trey Sizemore
+Dynamite Doubles
+trey@dynamitedoubles.com")))
+
+
+;; ── Signature: PickleballHut ──────────────────────────────────────────────
+;; Create ~/.signatures/pickleballhut.txt with your desired signature text.
+;; Example:
+;;   Trey Sizemore
+;;   PickleballHut
+;;   trey@pickleballhut.com | pickleballhut.com
+(defun my/pbh-signature ()
+  "Load PickleballHut signature from ~/.signatures/pickleballhut.txt."
+  (let ((f (expand-file-name "~/.signatures/pickleballhut.txt")))
+    (if (file-exists-p f)
+        (with-temp-buffer
+          (insert-file-contents f)
+          (buffer-string))
+      "Trey Sizemore
+PickleballHut
+trey@pickleballhut.com")))
 
 
 ;; ── PGP / mml-sec signing and encryption ──────────────────────────────────
@@ -1038,7 +1112,32 @@
 
 (after! dired
   (map! :map dired-mode-map
-        :n "R" #'my/dired-rename-with-filename))
+        :n "R" #'my/dired-rename-with-filename)
+  (add-hook 'dired-mode-hook #'nerd-icons-dired-mode)
+  (require 'diredfl)
+  (diredfl-global-mode 1))
+
+
+;; ── diredfl face overrides ────────────────────────────────────────────────
+;; doom-one sets diredfl-file-name to #bbc2cf (same as normal text), making
+;; filename coloring invisible. These overrides use doom-one's own palette.
+;; Only faces confirmed present in the installed version of diredfl are set.
+(after! diredfl
+  ;; Filenames
+  (set-face-attribute 'diredfl-file-name              nil :foreground "#bbc2cf")  ; plain files
+  (set-face-attribute 'diredfl-dir-name               nil :foreground "#51afef" :bold t)  ; directories
+  (set-face-attribute 'diredfl-symlink                nil :foreground "#a9a1e1")  ; symlinks
+  (set-face-attribute 'diredfl-compressed-file-name   nil :foreground "#da8548")  ; archives
+  (set-face-attribute 'diredfl-compressed-file-suffix nil :foreground "#da8548")
+  (set-face-attribute 'diredfl-executable-tag         nil :foreground "#98be65")  ; executables
+  ;; Permission bits
+  (set-face-attribute 'diredfl-dir-priv               nil :foreground "#51afef")
+  (set-face-attribute 'diredfl-exec-priv              nil :foreground "#98be65")
+  (set-face-attribute 'diredfl-read-priv              nil :foreground "#c678dd")
+  (set-face-attribute 'diredfl-write-priv             nil :foreground "#ff6c6b")
+  (set-face-attribute 'diredfl-no-priv                nil :foreground "#5b6268")
+  (set-face-attribute 'diredfl-rare-priv              nil :foreground "#da8548")
+  (set-face-attribute 'diredfl-link-priv              nil :foreground "#a9a1e1"))
 
 
 ;; ── Open HTML part of email in system browser ─────────────────────────────
