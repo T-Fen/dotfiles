@@ -28,4 +28,20 @@ from           trey.sizemore@gmail.com
 user           trey.sizemore@gmail.com
 passwordeval   "pass gmail/treysizemore"
 
+# Google Workspace: trey@dynamitedoubles.com
+account        dynamite-doubles
+host           smtp.gmail.com
+port           587
+from           trey@dynamitedoubles.com
+user           trey@dynamitedoubles.com
+passwordeval   "pass gmail/dynamite-doubles"
+
+# Google Workspace: trey@pickleballhut.com
+account        pickleballhut
+host           smtp.gmail.com
+port           587
+from           trey@pickleballhut.com
+user           trey@pickleballhut.com
+passwordeval   "pass gmail/pickleballhut"
+
 account default : fastmail

@@ -14,3 +14,12 @@
 (package! org-present)     ; Presentation mode
 (package! org-ql)          ; Advanced query language
 (package! org-mime)        ; HTML emails from org
+
+;; ══════════════════════════════════════════════════════════════════════════════
+;; DIRED ENHANCEMENTS
+;; ══════════════════════════════════════════════════════════════════════════════
+;; Explicit recipes used to ensure Doom fetches from the correct source.
+(package! nerd-icons-dired
+  :recipe (:host github :repo "rainstormstudio/nerd-icons-dired"))
+(package! diredfl
+  :recipe (:host github :repo "purcell/diredfl"))

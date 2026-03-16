@@ -82,3 +82,55 @@ Create Near
 Expunge Both
 Remove Both
 SyncState *
+
+# ─── Google Workspace: trey@dynamitedoubles.com ───────────────────────────────
+IMAPAccount dynamite-doubles
+Host imap.gmail.com
+User trey@dynamitedoubles.com
+PassCmd "pass gmail/dynamite-doubles"
+TLSType IMAPS
+PipelineDepth 1
+TLSVersions +1.2
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+IMAPStore dynamite-doubles-remote
+Account dynamite-doubles
+
+MaildirStore dynamite-doubles-local
+SubFolders Verbatim
+Path ~/.mail/dynamite-doubles/
+Inbox ~/.mail/dynamite-doubles/INBOX
+
+Channel dynamite-doubles
+Far :dynamite-doubles-remote:
+Near :dynamite-doubles-local:
+Patterns * ![Gmail]/All\ Mail ![Gmail]/Important ![Gmail]/Starred
+Create Both
+Expunge Both
+SyncState *
+
+# ─── Google Workspace: trey@pickleballhut.com ─────────────────────────────────
+IMAPAccount pickleballhut
+Host imap.gmail.com
+User trey@pickleballhut.com
+PassCmd "pass gmail/pickleballhut"
+TLSType IMAPS
+PipelineDepth 1
+TLSVersions +1.2
+CertificateFile /etc/ssl/certs/ca-certificates.crt
+
+IMAPStore pickleballhut-remote
+Account pickleballhut
+
+MaildirStore pickleballhut-local
+SubFolders Verbatim
+Path ~/.mail/pickleballhut/
+Inbox ~/.mail/pickleballhut/INBOX
+
+Channel pickleballhut
+Far :pickleballhut-remote:
+Near :pickleballhut-local:
+Patterns * ![Gmail]/All\ Mail ![Gmail]/Important ![Gmail]/Starred
+Create Both
+Expunge Both
+SyncState *
