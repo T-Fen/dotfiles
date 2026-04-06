@@ -10,19 +10,6 @@
 
 
 ;; ──────────────────────────────────────────
-;; Emacs Server — required for org-protocol + emacsclient
-;; ──────────────────────────────────────────
-
-;; Start the Emacs server so emacsclient can hand off org-protocol:// URLs.
-;; The browser bookmarklet fires org-protocol:// → OS routes to emacsclient
-;; → emacsclient connects here → capture buffer opens inside Emacs.
-;; Safe to call multiple times — no-ops if server is already running.
-(require 'server)
-(unless (server-running-p)
-  (server-start))
-
-
-;; ──────────────────────────────────────────
 ;; Org Settings (must be set before org loads)
 ;; ──────────────────────────────────────────
 
@@ -45,58 +32,6 @@
 ;; Key created with: gpg --batch --gen-key (no-protection, plstore@localhost)
 (setq plstore-encrypt-to "plstore@localhost")
 (setq plstore-cache-passphrase-for-symmetric-encryption t)
-
-
-;; ──────────────────────────────────────────
-;; Org-Protocol — web capture from browser
-;; ──────────────────────────────────────────
-
-;; org-protocol intercepts org-protocol:// URLs fired by the browser
-;; bookmarklet and routes them into org-capture. Requires emacsclient
-;; server (above) and the .desktop mime handler installed on CachyOS.
-(require 'org-protocol)
-
-
-;; ──────────────────────────────────────────
-;; Web Capture — helper functions
-;; Used by the "w", "W", and "G" capture templates below.
-;; ──────────────────────────────────────────
-
-(defun trey/completing-read-default (prompt choices default)
-  "completing-read with DEFAULT pre-selected."
-  (completing-read (format "%s (default: %s): " prompt default)
-                   choices nil t nil nil default))
-
-(defun trey/capture-domain ()
-  "Prompt for domain with completing-read."
-  (trey/completing-read-default
-   "Domain"
-   '("Pickleball Hut"
-     "Dynamite Doubles"
-     "RevLogic / Sales Enablement"
-     "Doom Emacs / CachyOS"
-     "Personal")
-   "Pickleball Hut"))
-
-(defun trey/capture-action ()
-  "Prompt for intended action with completing-read."
-  (trey/completing-read-default
-   "Action"
-   '("read-later"
-     "implement"
-     "reference"
-     "share"
-     "watch"
-     "someday"
-     "archive")
-   "reference"))
-
-(defun trey/capture-tags ()
-  "Enter org filetags interactively, colon-separated (e.g. membership:inspiration)."
-  (let ((raw (read-string "Tags (colon-separated, no spaces): ")))
-    (if (string-empty-p raw)
-        ""
-      (concat ":" (replace-regexp-in-string ":" ":" raw) ":"))))
 
 
 ;; ──────────────────────────────────────────
@@ -207,8 +142,7 @@
            "* TODO Reply to %:fromname: %:subject :email:reply:\nDEADLINE: %^{Due}t\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n[[mu4e:msgid:%:message-id][Open Email]]\n"
            :empty-lines 1)
 
-          ;; ── renamed from "w" → "a" (awaiting) to free "w" for web capture ──
-          ("a" "Email → Awaiting Reply" entry
+          ("w" "Email → Waiting" entry
            (file+headline "~/org/inbox.org" "Waiting")
            "* WAITING %:fromname re: %:subject :email:waiting:\n:PROPERTIES:\n:CREATED: %U\n:END:\n\n[[mu4e:msgid:%:message-id][Open Email]]\n"
            :empty-lines 1)
@@ -216,61 +150,6 @@
           ("E" "Email → TODO with body" entry
            (file+headline "~/org/inbox.org" "Inbox")
            "* TODO %? :email:\n:PROPERTIES:\n:CREATED: %U\n:END:\n\nFrom: %:fromname <%:fromaddress>\nSubject: %:subject\n\n[[mu4e:msgid:%:message-id][Open Email]]\n\n%:body\n"
-           :empty-lines 1)
-
-          ;; ── Web capture via org-protocol (browser bookmarklet) ──────────────
-          ;; Full capture: bookmarklet fires org-protocol://capture?template=w
-          ;; Prompts for domain, action, tags, notes — then C-c C-c to save.
-          ;; Node lands in captures-inbox.org with a UUID, URL, and your notes.
-          ("w" "Web capture" entry
-           (file "~/org/roam/captures-inbox.org")
-           "* %(trey/capture-domain) | %:description
-:PROPERTIES:
-:ID:       %(org-id-new)
-:URL:      %:link
-:CAPTURED: %T
-:DOMAIN:   %(trey/capture-domain)
-:ACTION:   %(trey/capture-action)
-:TAGS:     %(trey/capture-tags)
-:END:
-
-** Notes
-%?"
-           :empty-lines 1
-           :immediate-finish nil)
-
-          ;; Quick capture: bookmarklet fires org-protocol://capture?template=W
-          ;; No prompts — instantly saves title + URL as INBOX entry.
-          ;; Use for fast capture; triage later with SPC n r i.
-          ("W" "Web capture (quick)" entry
-           (file "~/org/roam/captures-inbox.org")
-           "* INBOX %:description
-:PROPERTIES:
-:ID:       %(org-id-new)
-:URL:      %:link
-:CAPTURED: %T
-:ACTION:   read-later
-:END:"
-           :empty-lines 1
-           :immediate-finish t)
-
-          ;; Google Doc / Sheet / Slides stub node — SPC X G
-          ;; Stores title, URL, type, domain, and your notes.
-          ;; Open the doc later with SPC n r o from inside the node.
-          ("G" "Google Doc / Sheet / Slides" entry
-           (file "~/org/roam/captures-inbox.org")
-           "* %^{Title}
-:PROPERTIES:
-:ID:       %(org-id-new)
-:URL:      %^{Google URL}
-:TYPE:     %^{Type|Google Doc|Google Sheet|Google Slides}
-:DOMAIN:   %(trey/capture-domain)
-:CAPTURED: %T
-:ACTION:   %(trey/capture-action)
-:END:
-
-** Notes
-%?"
            :empty-lines 1)))
 
   ;; ── Refile targets ─────────────────────────────────────────────────────────
@@ -510,162 +389,6 @@
 
 
 ;; ──────────────────────────────────────────
-;; Org-Roam — web capture helpers
-;; SPC n r o  open URL in browser
-;; SPC n r D  find node by domain
-;; SPC n r A  find node by action
-;; SPC n r s  full-text ripgrep across roam dir
-;; SPC n r p  promote inbox entry to standalone roam node
-;; SPC n r i  open inbox filtered to read-later
-;; ──────────────────────────────────────────
-
-(after! org-roam
-
-  ;; ── Open :URL: property of current node in browser ──────────────────────────
-  ;; Works on any heading with a :URL: drawer — web pages, Google Docs,
-  ;; Google Sheets, YouTube videos, anything.
-  (defun trey/open-node-url ()
-    "Open the :URL: property of the current org entry in the default browser."
-    (interactive)
-    (let ((url (org-entry-get nil "URL" t)))
-      (if url
-          (browse-url url)
-        (user-error "No :URL: property found on this heading"))))
-
-  (map! :leader
-        :prefix ("n r" . "org-roam")
-        :desc "Open node URL in browser" "o" #'trey/open-node-url)
-
-  ;; ── Find roam nodes by DOMAIN property ──────────────────────────────────────
-  (defun trey/roam-find-by-domain ()
-    "Filter org-roam nodes by DOMAIN property using completing-read."
-    (interactive)
-    (let* ((domain (completing-read
-                    "Domain: "
-                    '("Pickleball Hut"
-                      "Dynamite Doubles"
-                      "RevLogic / Sales Enablement"
-                      "Doom Emacs / CachyOS"
-                      "Personal")))
-           (nodes  (org-roam-db-query
-                    [:select [nodes:id nodes:title nodes:file]
-                     :from nodes
-                     :inner :join properties
-                     :on (= nodes:id properties:node-id)
-                     :where (and (= properties:key "DOMAIN")
-                                 (= properties:value $s1))]
-                    domain))
-           (choices (mapcar (lambda (n) (cons (cadr n) n)) nodes))
-           (chosen  (completing-read
-                     (format "Nodes in [%s]: " domain)
-                     (mapcar #'car choices)))
-           (node    (cdr (assoc chosen choices))))
-      (when node
-        (find-file (caddr node)))))
-
-  (map! :leader
-        :prefix ("n r" . "org-roam")
-        :desc "Find node by domain" "D" #'trey/roam-find-by-domain)
-
-  ;; ── Find roam nodes by ACTION property ──────────────────────────────────────
-  (defun trey/roam-find-by-action ()
-    "Filter org-roam nodes by ACTION property using completing-read."
-    (interactive)
-    (let* ((action (completing-read
-                    "Action: "
-                    '("read-later" "implement" "reference"
-                      "share" "watch" "someday" "archive")))
-           (nodes  (org-roam-db-query
-                    [:select [nodes:id nodes:title nodes:file]
-                     :from nodes
-                     :inner :join properties
-                     :on (= nodes:id properties:node-id)
-                     :where (and (= properties:key "ACTION")
-                                 (= properties:value $s1))]
-                    action)))
-      (if (null nodes)
-          (message "No nodes found with ACTION=%s" action)
-        (let* ((choices (mapcar (lambda (n) (cons (cadr n) n)) nodes))
-               (chosen  (completing-read
-                         (format "[%s] nodes: " action)
-                         (mapcar #'car choices)))
-               (node    (cdr (assoc chosen choices))))
-          (when node
-            (find-file (caddr node)))))))
-
-  (map! :leader
-        :prefix ("n r" . "org-roam")
-        :desc "Find node by action" "A" #'trey/roam-find-by-action)
-
-  ;; ── Full-text ripgrep search across org-roam directory ──────────────────────
-  ;; Searches all note content including your notes, summaries, and URLs.
-  (defun trey/roam-search ()
-    "Full-text ripgrep search across the org-roam directory."
-    (interactive)
-    (require 'consult)
-    (consult-ripgrep org-roam-directory))
-
-  (map! :leader
-        :prefix ("n r" . "org-roam")
-        :desc "Full-text search roam" "s" #'trey/roam-search)
-
-  ;; ── Promote inbox entry to a standalone org-roam node file ──────────────────
-  ;; Position cursor on an inbox heading, then SPC n r p.
-  ;; Creates a new .org file in org-roam-directory with the heading's
-  ;; title, URL, domain, action, and tags, then updates the roam DB.
-  (defun trey/promote-capture-to-roam ()
-    "Promote the current org heading to a standalone org-roam node file."
-    (interactive)
-    (unless (derived-mode-p 'org-mode)
-      (user-error "Not in org-mode"))
-    (let* ((title    (nth 4 (org-heading-components)))
-           (url      (org-entry-get nil "URL"))
-           (domain   (org-entry-get nil "DOMAIN"))
-           (action   (org-entry-get nil "ACTION"))
-           (tags-raw (org-entry-get nil "TAGS"))
-           (id       (org-id-get-create))
-           (slug     (replace-regexp-in-string
-                      "[^a-z0-9-]" "-"
-                      (downcase (or title "untitled"))))
-           (fname    (expand-file-name
-                      (concat slug ".org")
-                      org-roam-directory))
-           (filetags (or tags-raw ":inbox:")))
-      (find-file fname)
-      (insert (format ":PROPERTIES:\n:ID:       %s\n:END:\n" id))
-      (insert (format "#+title: %s\n" title))
-      (insert (format "#+filetags: %s\n\n" filetags))
-      (insert (format "* [[%s][%s]]\n" (or url "") title))
-      (insert ":PROPERTIES:\n")
-      (when url    (insert (format ":URL:      %s\n" url)))
-      (when domain (insert (format ":DOMAIN:   %s\n" domain)))
-      (when action (insert (format ":ACTION:   %s\n" action)))
-      (insert (format ":CAPTURED: [%s]\n" (format-time-string "%Y-%m-%d %a")))
-      (insert ":END:\n\n")
-      (insert "** Notes\n\n")
-      (save-buffer)
-      (org-roam-db-update-file)
-      (message "Promoted → %s" fname)))
-
-  (map! :leader
-        :prefix ("n r" . "org-roam")
-        :desc "Promote capture to roam node" "p" #'trey/promote-capture-to-roam)
-
-  ;; ── Open inbox filtered to read-later entries ───────────────────────────────
-  ;; Use this during your weekly review to triage captures.
-  ;; Promote keepers with SPC n r p; delete or archive the rest.
-  (defun trey/open-captures-inbox ()
-    "Open captures-inbox.org and sparse-tree to read-later entries."
-    (interactive)
-    (find-file (expand-file-name "captures-inbox.org" org-roam-directory))
-    (org-match-sparse-tree nil "ACTION=\"read-later\""))
-
-  (map! :leader
-        :prefix ("n r" . "org-roam")
-        :desc "Open captures inbox" "i" #'trey/open-captures-inbox))
-
-
-;; ──────────────────────────────────────────
 ;; Org-Journal
 ;; ──────────────────────────────────────────
 
@@ -804,7 +527,7 @@
 
   ;; ── Core settings ──────────────────────────────────────────────────────────
   (setq mu4e-maildir                    "~/.mail"
-        mu4e-get-mail-command           "mbsync fastmail gmail-hj gmail-trey"
+        mu4e-get-mail-command           "mbsync fastmail gmail-hj gmail-trey dynamite-doubles pickleballhut"
         mu4e-update-interval            (* 10 60)       ; sync every 10 minutes
         mu4e-index-update-in-background t
         mu4e-use-fancy-chars            t
@@ -866,17 +589,13 @@
 
   ;; ── Maildir shortcuts (Maildirs section of main view) ─────────────────────
   (setq mu4e-maildir-shortcuts
-    '((:maildir "/fastmail/INBOX"                     :key ?f)
-      (:maildir "/fastmail/Archive"                   :key ?a)
-      (:maildir "/fastmail/Sent"                      :key ?s)
-      (:maildir "/gmail-hj/INBOX"                     :key ?h)
-      (:maildir "/gmail-hj/[Gmail]/Sent Mail"         :key ?H)
-      (:maildir "/gmail-trey/INBOX"                   :key ?t)
-      (:maildir "/gmail-trey/[Gmail]/Sent Mail"       :key ?T)
-      (:maildir "/dynamite-doubles/INBOX"             :key ?d)
-      (:maildir "/dynamite-doubles/[Gmail]/Sent Mail" :key ?D)
-      (:maildir "/pickleballhut/INBOX"                :key ?p)
-      (:maildir "/pickleballhut/[Gmail]/Sent Mail"    :key ?P)))
+    '((:maildir "/fastmail/INBOX"               :key ?f)
+      (:maildir "/fastmail/Archive"             :key ?a)
+      (:maildir "/fastmail/Sent"                :key ?s)
+      (:maildir "/gmail-hj/INBOX"               :key ?h)
+      (:maildir "/gmail-hj/[Gmail]/Sent Mail"   :key ?H)
+      (:maildir "/gmail-trey/INBOX"             :key ?t)
+      (:maildir "/gmail-trey/[Gmail]/Sent Mail" :key ?T)))
 
   ;; ── Contexts (one per account) ─────────────────────────────────────────────
   (setq mu4e-contexts
@@ -926,44 +645,12 @@
                 (mu4e-trash-folder       . "/gmail-trey/[Gmail]/Trash")
                 (mu4e-refile-folder      . "/gmail-trey/[Gmail]/All Mail")
                 (smtpmail-smtp-user      . "trey.sizemore@gmail.com")
-                (mu4e-compose-signature  . nil)))
-
-      ;; Google Workspace: trey@dynamitedoubles.com
-      ;; Signature loaded from ~/.signatures/dynamite-doubles.txt (create if needed)
-      (make-mu4e-context
-        :name "DynamiteDoubles"
-        :match-func (lambda (msg)
-          (when msg
-            (string-prefix-p "/dynamite-doubles" (mu4e-message-field msg :maildir))))
-        :vars '((user-mail-address       . "trey@dynamitedoubles.com")
-                (user-full-name          . "Trey Sizemore")
-                (mu4e-sent-folder        . "/dynamite-doubles/[Gmail]/Sent Mail")
-                (mu4e-drafts-folder      . "/dynamite-doubles/[Gmail]/Drafts")
-                (mu4e-trash-folder       . "/dynamite-doubles/[Gmail]/Trash")
-                (mu4e-refile-folder      . "/dynamite-doubles/[Gmail]/All Mail")
-                (smtpmail-smtp-user      . "trey@dynamitedoubles.com")
-                (mu4e-compose-signature  . my/dd-signature)))
-
-      ;; Google Workspace: trey@pickleballhut.com
-      ;; Signature loaded from ~/.signatures/pickleballhut.txt (create if needed)
-      (make-mu4e-context
-        :name "PickleballHut"
-        :match-func (lambda (msg)
-          (when msg
-            (string-prefix-p "/pickleballhut" (mu4e-message-field msg :maildir))))
-        :vars '((user-mail-address       . "trey@pickleballhut.com")
-                (user-full-name          . "Trey Sizemore")
-                (mu4e-sent-folder        . "/pickleballhut/[Gmail]/Sent Mail")
-                (mu4e-drafts-folder      . "/pickleballhut/[Gmail]/Drafts")
-                (mu4e-trash-folder       . "/pickleballhut/[Gmail]/Trash")
-                (mu4e-refile-folder      . "/pickleballhut/[Gmail]/All Mail")
-                (smtpmail-smtp-user      . "trey@pickleballhut.com")
-                (mu4e-compose-signature  . my/pbh-signature)))))
+                (mu4e-compose-signature  . nil)))))
 
   ;; ── Bookmarks ──────────────────────────────────────────────────────────────
   (add-to-list 'mu4e-bookmarks
     '(:name "All Inboxes"
-      :query "maildir:/fastmail/INBOX OR maildir:/gmail-hj/INBOX OR maildir:/gmail-trey/INBOX OR maildir:/dynamite-doubles/INBOX OR maildir:/pickleballhut/INBOX"
+      :query "maildir:/fastmail/INBOX OR maildir:/gmail-hj/INBOX OR maildir:/gmail-trey/INBOX"
       :key ?i))
   (add-to-list 'mu4e-bookmarks
     '(:name "All Unread"
@@ -1008,11 +695,9 @@
   (save-excursion
     (let* ((from (message-fetch-field "from"))
            (account (cond
-                     ((string-match "trey@dynamitedoubles.com" from) "dynamite-doubles")
-                     ((string-match "trey@pickleballhut.com" from)   "pickleballhut")
-                     ((string-match "trey@fastmail.fm" from)         "fastmail")
-                     ((string-match "hjsizemore@gmail.com" from)     "gmail-hj")
-                     ((string-match "trey.sizemore@gmail.com" from)  "gmail-trey")
+                     ((string-match "trey@fastmail.fm" from)        "fastmail")
+                     ((string-match "hjsizemore@gmail.com" from)    "gmail-hj")
+                     ((string-match "trey.sizemore@gmail.com" from) "gmail-trey")
                      (t "fastmail"))))
       (setq message-sendmail-extra-arguments (list "--account" account)))))
 
@@ -1032,42 +717,6 @@
         (insert-file-contents "~/.signature")
         (buffer-string))
     "Trey Sizemore"))   ; fallback if file missing
-
-
-;; ── Signature: Dynamite Doubles ───────────────────────────────────────────
-;; Create ~/.signatures/dynamite-doubles.txt with your desired signature text.
-;; Example:
-;;   Trey Sizemore
-;;   Co-Founder, Dynamite Doubles
-;;   trey@dynamitedoubles.com | dynamitedoubles.com
-(defun my/dd-signature ()
-  "Load Dynamite Doubles signature from ~/.signatures/dynamite-doubles.txt."
-  (let ((f (expand-file-name "~/.signatures/dynamite-doubles.txt")))
-    (if (file-exists-p f)
-        (with-temp-buffer
-          (insert-file-contents f)
-          (buffer-string))
-      "Trey Sizemore
-Dynamite Doubles
-trey@dynamitedoubles.com")))
-
-
-;; ── Signature: PickleballHut ──────────────────────────────────────────────
-;; Create ~/.signatures/pickleballhut.txt with your desired signature text.
-;; Example:
-;;   Trey Sizemore
-;;   PickleballHut
-;;   trey@pickleballhut.com | pickleballhut.com
-(defun my/pbh-signature ()
-  "Load PickleballHut signature from ~/.signatures/pickleballhut.txt."
-  (let ((f (expand-file-name "~/.signatures/pickleballhut.txt")))
-    (if (file-exists-p f)
-        (with-temp-buffer
-          (insert-file-contents f)
-          (buffer-string))
-      "Trey Sizemore
-PickleballHut
-trey@pickleballhut.com")))
 
 
 ;; ── PGP / mml-sec signing and encryption ──────────────────────────────────
@@ -1112,32 +761,7 @@ trey@pickleballhut.com")))
 
 (after! dired
   (map! :map dired-mode-map
-        :n "R" #'my/dired-rename-with-filename)
-  (add-hook 'dired-mode-hook #'nerd-icons-dired-mode)
-  (require 'diredfl)
-  (diredfl-global-mode 1))
-
-
-;; ── diredfl face overrides ────────────────────────────────────────────────
-;; doom-one sets diredfl-file-name to #bbc2cf (same as normal text), making
-;; filename coloring invisible. These overrides use doom-one's own palette.
-;; Only faces confirmed present in the installed version of diredfl are set.
-(after! diredfl
-  ;; Filenames
-  (set-face-attribute 'diredfl-file-name              nil :foreground "#bbc2cf")  ; plain files
-  (set-face-attribute 'diredfl-dir-name               nil :foreground "#51afef" :bold t)  ; directories
-  (set-face-attribute 'diredfl-symlink                nil :foreground "#a9a1e1")  ; symlinks
-  (set-face-attribute 'diredfl-compressed-file-name   nil :foreground "#da8548")  ; archives
-  (set-face-attribute 'diredfl-compressed-file-suffix nil :foreground "#da8548")
-  (set-face-attribute 'diredfl-executable-tag         nil :foreground "#98be65")  ; executables
-  ;; Permission bits
-  (set-face-attribute 'diredfl-dir-priv               nil :foreground "#51afef")
-  (set-face-attribute 'diredfl-exec-priv              nil :foreground "#98be65")
-  (set-face-attribute 'diredfl-read-priv              nil :foreground "#c678dd")
-  (set-face-attribute 'diredfl-write-priv             nil :foreground "#ff6c6b")
-  (set-face-attribute 'diredfl-no-priv                nil :foreground "#5b6268")
-  (set-face-attribute 'diredfl-rare-priv              nil :foreground "#da8548")
-  (set-face-attribute 'diredfl-link-priv              nil :foreground "#a9a1e1"))
+        :n "R" #'my/dired-rename-with-filename))
 
 
 ;; ── Open HTML part of email in system browser ─────────────────────────────
@@ -1165,4 +789,3 @@ trey@pickleballhut.com")))
     (if urls
         (browse-url (completing-read "Open URL: " (delete-dups (reverse urls))))
       (message "No URLs found in this message."))))
-
