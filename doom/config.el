@@ -683,8 +683,8 @@
 ;; ── Auto-sync Google Calendar every 15 minutes ────────────────────────────
 ;; Runs independently of mu4e so it fires even without mail activity.
 ;; 60s initial delay lets Emacs finish loading before the first fetch.
-(with-eval-after-load 'org-gcal
-  (run-with-timer 60 (* 15 60) #'org-gcal-fetch))
+(require 'org-gcal)
+(run-with-timer 60 (* 15 60) #'org-gcal-fetch)
 
 
 ;; ── org-mu4e link support ──────────────────────────────────────────────────
