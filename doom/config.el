@@ -679,8 +679,11 @@
   (map! :map mu4e-headers-mode-map
         :n "U" #'mu4e-update-mail-and-index)
 
-  ;; Auto-fetch Google Calendar every time mail syncs
-  (add-hook 'mu4e-index-updated-hook #'org-gcal-fetch))
+  ;; Auto-fetch Google Calendar every 15 minutes via timer.
+  ;; mu4e-index-updated-hook only fires when new mail arrives, making it
+  ;; unreliable for calendar sync. A timer ensures the calendar stays current
+  ;; regardless of mail activity. 0 = start immediately on first load.
+  (run-with-timer 0 (* 15 60) #'org-gcal-fetch))
 
 
 ;; ── org-mu4e link support ──────────────────────────────────────────────────
