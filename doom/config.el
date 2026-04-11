@@ -680,7 +680,7 @@
         :n "U" #'mu4e-update-mail-and-index)
 
   ;; Auto-fetch Google Calendar every time mail syncs
-  (add-hook 'mu4e-update-post-hook #'org-gcal-fetch))
+  (add-hook 'mu4e-index-updated-hook #'org-gcal-fetch))
 
 
 ;; ── org-mu4e link support ──────────────────────────────────────────────────
