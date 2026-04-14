@@ -332,6 +332,8 @@
   :hook
   (org-mode . org-modern-mode)
   (org-agenda-finalize . org-modern-agenda))
+  :config
+  (setq org-modern-star 'replace)) ;; Change from 'fold to 'replace
 
 
 ;; ──────────────────────────────────────────

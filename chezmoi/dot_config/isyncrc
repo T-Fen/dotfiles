@@ -24,9 +24,10 @@ Inbox ~/.mail/gmail-hj/INBOX
 Channel gmail-hj
 Far :gmail-hj-remote:
 Near :gmail-hj-local:
-Patterns * ![Gmail]/All\ Mail ![Gmail]/Important ![Gmail]/Starred
+Patterns * ![Gmail]/All\ Mail ![Gmail]/Important ![Gmail]/Starred !Drafts !Later !Queue !Sent !Trash !support
 Create Both
 Expunge Both
+Remove Both
 SyncState *
 
 # ─── Gmail: trey.sizemore@gmail.com ───────────────────────────────────────────
