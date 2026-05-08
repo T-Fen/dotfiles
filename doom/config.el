@@ -529,8 +529,8 @@
 
   ;; ── Core settings ──────────────────────────────────────────────────────────
   (setq mu4e-maildir                    "~/.mail"
-        mu4e-get-mail-command           "mbsync fastmail gmail-hj gmail-trey dynamite-doubles pickleballhut"
-        mu4e-update-interval            (* 10 60)       ; sync every 10 minutes
+        mu4e-get-mail-command           "mailsync"                          ; parallel sync script
+        mu4e-update-interval            (* 5 60)        ; sync every 5 minutes
         mu4e-index-update-in-background t
         mu4e-use-fancy-chars            t
         mu4e-view-show-images           t

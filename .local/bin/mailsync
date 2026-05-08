@@ -1,0 +1,14 @@
+#!/bin/bash
+# mailsync — sync all mail accounts in parallel then reindex mu4e
+# Lives at ~/.local/bin/mailsync
+# Make executable: chmod +x ~/.local/bin/mailsync
+
+mbsync gmail-hj &
+mbsync gmail-trey &
+mbsync fastmail &
+mbsync dynamite-doubles &
+mbsync pickleballhut &
+wait
+
+# Reindex mu after all syncs complete
+mu index
