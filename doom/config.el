@@ -8,6 +8,18 @@
 (setq doom-theme 'doom-one)
 (setq display-line-numbers-type t)
 
+;; ──────────────────────────────────────────
+;; Shell & Frame
+;; ──────────────────────────────────────────
+
+;; Use bash internally; fish for interactive terminals
+(setq shell-file-name (executable-find "bash"))
+(setq-default vterm-shell "/bin/fish")
+(setq-default explicit-shell-file-name "/bin/fish")
+
+;; Open Emacs maximized
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
 
 ;; ──────────────────────────────────────────
 ;; Org Settings (must be set before org loads)
@@ -331,7 +343,7 @@
 (use-package! org-modern
   :hook
   (org-mode . org-modern-mode)
-  (org-agenda-finalize . org-modern-agenda))
+  (org-agenda-finalize . org-modern-agenda)
   :config
   (setq org-modern-star 'replace)) ;; Change from 'fold to 'replace
 
