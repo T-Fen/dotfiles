@@ -40,10 +40,9 @@
   (when (file-exists-p creds)
     (load creds)))
 
-;; Use passphrase-free GPG key for plstore — no prompts ever
-;; Key created with: gpg --batch --gen-key (no-protection, plstore@localhost)
-(setq plstore-encrypt-to "plstore@localhost")
-(setq plstore-cache-passphrase-for-symmetric-encryption t)
+;; Disable plstore encryption — no passphrase prompts for org-gcal OAuth tokens
+;; Tokens are stored in plaintext locally, protected by Google account auth
+(setq plstore-encrypt-to nil)
 
 
 ;; ──────────────────────────────────────────
